@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir /b /s \"c:\\Users\\Darren\\Desktop\\Projects\\FitTrack\")",
+      "Bash(findstr:*)",
+      "Bash(npx shadcn-ui@latest:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npx shadcn@latest add button input label select dialog drawer card badge form separator toast alert skeleton checkbox)",
+      "Bash(npx shadcn@latest add button input label select dialog drawer card badge form separator sonner alert skeleton checkbox)",
+      "Bash(npm run dev:*)",
+      "Bash(dir /s /b \"c:\\Users\\Darren\\Desktop\\Projects\\FitTrack\")",
+      "Bash(ls:*)",
+      "Bash(npx shadcn@latest add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

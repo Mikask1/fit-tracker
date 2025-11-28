@@ -1,0 +1,315 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { trpc } from '@/lib/trpc/client';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from '@/components/ui/drawer';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ExerciseList } from './ExerciseList';
+import { AddExerciseDrawer } from './AddExerciseDrawer';
+import { toast } from 'sonner';
+
+const exerciseSchema = z.object({
+  movementId: z.string(),
+  targetSets: z.number().min(1).max(20),
+  targetReps: z.number().min(1).max(999),
+  targetWeight: z.number().min(0).max(9999),
+  supersetWith: z.array(z.string()),
+  order: z.number().min(0),
+});
+
+const routineSchema = z.object({
+  name: z.string().min(1, 'Routine name is required'),
+  exercises: z.array(exerciseSchema),
+});
+
+type RoutineFormData = z.infer<typeof routineSchema>;
+export type ExerciseFormData = z.infer<typeof exerciseSchema>;
+
+interface RoutineDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editingId: string | null;
+  onSuccess?: () => void;
+}
+
+export function RoutineDrawer({
+  open,
+  onOpenChange,
+  editingId,
+  onSuccess,
+}: RoutineDrawerProps) {
+  const utils = trpc.useUtils();
+  const isEditing = !!editingId;
+  const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
+
+  const form = useForm<RoutineFormData>({
+    resolver: zodResolver(routineSchema),
+    defaultValues: {
+      name: '',
+      exercises: [],
+    },
+  });
+
+  // Load routine data for editing
+  const { data: routineData } = trpc.routines.getById.useQuery(
+    { id: editingId! },
+    { enabled: isEditing && open }
+  );
+
+  // Reset form when dialog opens/closes or when editing different routine
+  useEffect(() => {
+    if (open) {
+      if (isEditing && routineData) {
+        // Edit mode: pre-fill form
+        // Transform populated movementId to string ID
+        form.reset({
+          name: routineData.name,
+          exercises: routineData.exercises.map((ex: any) => ({
+            movementId: typeof ex.movementId === 'object' ? ex.movementId._id : ex.movementId,
+            targetSets: ex.targetSets,
+            targetReps: ex.targetReps,
+            targetWeight: ex.targetWeight || 0,
+            supersetWith: ex.supersetWith.map((id: any) =>
+              typeof id === 'object' ? id._id : id
+            ),
+            order: ex.order,
+          })),
+        });
+      } else if (!isEditing) {
+        // Create mode: reset to defaults
+        form.reset({
+          name: '',
+          exercises: [],
+        });
+      }
+    }
+  }, [open, isEditing, routineData, form]);
+
+  const createMutation = trpc.routines.create.useMutation({
+    onSuccess: () => {
+      utils.routines.list.invalidate();
+      toast.success('Routine created successfully!');
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const updateMutation = trpc.routines.update.useMutation({
+    onSuccess: () => {
+      utils.routines.list.invalidate();
+      toast.success('Routine updated successfully!');
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
+  const onSubmit = async (data: RoutineFormData) => {
+    if (isEditing) {
+      await updateMutation.mutateAsync({
+        id: editingId,
+        ...data,
+      });
+    } else {
+      await createMutation.mutateAsync(data);
+    }
+  };
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const exercises = form.watch('exercises');
+
+  const handleAddExercise = (newExercise: ExerciseFormData) => {
+    const currentExercises = form.getValues('exercises');
+    form.setValue('exercises', [
+      ...currentExercises,
+      { ...newExercise, order: currentExercises.length },
+    ]);
+    setIsAddExerciseOpen(false);
+  };
+
+  const handleUpdateExercises = (updatedExercises: ExerciseFormData[]) => {
+    form.setValue('exercises', updatedExercises);
+  };
+
+  // Calculate total estimated duration
+  const calculateTotalDuration = () => {
+    if (exercises.length === 0) return null;
+
+    const setDuration = 60; // seconds per set
+
+    // Build superset groups
+    const processedIds = new Set<string>();
+    const supersetGroups: string[][] = [];
+
+    exercises.forEach((exercise) => {
+      if (processedIds.has(exercise.movementId)) return;
+
+      if (exercise.supersetWith.length > 0) {
+        // Build the superset group
+        const group = [exercise.movementId, ...exercise.supersetWith];
+        supersetGroups.push(group);
+        group.forEach(id => processedIds.add(id));
+      }
+    });
+
+    const totalSeconds = exercises.reduce((total, exercise) => {
+      // Find superset group size
+      const supersetGroup = supersetGroups.find(group => group.includes(exercise.movementId));
+      const supersetSize = supersetGroup ? supersetGroup.length : 1;
+
+      // Rest formula: (4 - superset_size) minutes
+      // 1 exercise (regular): 3 min rest
+      // 2 exercise superset: 2 min rest
+      // 3 exercise superset: 1 min rest
+      const restMinutes = 4 - supersetSize;
+      const restBetweenSets = restMinutes * 60; // convert to seconds
+
+      const exerciseSeconds = (exercise.targetSets * setDuration) + ((exercise.targetSets - 1) * restBetweenSets);
+      return total + exerciseSeconds;
+    }, 0);
+
+    const minutes = Math.floor(totalSeconds / 60);
+    return `~${minutes} min`;
+  };
+
+  return (
+    <>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader>
+            <DrawerTitle>
+              {isEditing ? 'Edit Routine' : 'Create New Routine'}
+            </DrawerTitle>
+            <DrawerDescription>
+              {isEditing
+                ? 'Update the routine details and exercises below.'
+                : 'Add a new workout routine to your library.'}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+              {/* Routine Name - Sticky at top */}
+              <div className="px-4 pt-4 pb-3 border-b">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Routine Name *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="e.g., Full Body A, Push Day"
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Movements Header - Sticky */}
+              <div className="px-4 py-3 border-b flex justify-between items-center bg-background">
+                <div className="flex flex-col">
+                  <FormLabel>Movements</FormLabel>
+                  {exercises.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} • {calculateTotalDuration()}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddExerciseOpen(true)}
+                  className="h-9"
+                >
+                  Add Movement
+                </Button>
+              </div>
+
+              {/* Exercise List - Scrollable */}
+              <ScrollArea className="flex-1 overflow-auto">
+                <div className="px-4 py-4">
+                  {exercises.length === 0 ? (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
+                      <p>No exercises added yet</p>
+                      <p className="text-sm mt-1">Click "Add Movement" to get started</p>
+                    </div>
+                  ) : (
+                    <div data-vaul-no-drag>
+                      <ExerciseList
+                        exercises={exercises}
+                        onChange={handleUpdateExercises}
+                      />
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </form>
+          </Form>
+
+          <DrawerFooter className="border-t">
+            <div className="flex gap-2 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+                className="flex-1 min-h-11"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                onClick={form.handleSubmit(onSubmit)}
+                className="flex-1 min-h-11"
+              >
+                {isLoading
+                  ? 'Saving...'
+                  : isEditing
+                    ? 'Update Routine'
+                    : 'Create Routine'}
+              </Button>
+            </div>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Add Exercise Drawer */}
+      <AddExerciseDrawer
+        open={isAddExerciseOpen}
+        onOpenChange={setIsAddExerciseOpen}
+        onAddExercise={handleAddExercise}
+        excludeMovementIds={exercises.map((ex) => ex.movementId)}
+      />
+    </>
+  );
+}
