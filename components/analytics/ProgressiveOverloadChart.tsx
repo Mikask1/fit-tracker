@@ -259,7 +259,7 @@ export function ProgressiveOverloadChart({
             />
             <Legend
               verticalAlign="bottom"
-              height={36}
+              height={100}
               formatter={(value) => (
                 <span className="text-sm">{value}</span>
               )}

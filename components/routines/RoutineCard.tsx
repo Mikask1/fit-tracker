@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -35,11 +35,10 @@ interface Routine {
 interface RoutineCardProps {
   routine: Routine;
   onEdit: () => void;
-  onDelete: () => void;
   onDuplicate: (newName: string) => void;
 }
 
-export function RoutineCard({ routine, onEdit, onDelete, onDuplicate }: RoutineCardProps) {
+export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) {
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [duplicateName, setDuplicateName] = useState('');
   const previewLimit = 3;
@@ -56,11 +55,6 @@ export function RoutineCard({ routine, onEdit, onDelete, onDuplicate }: RoutineC
   const handleDuplicateConfirm = () => {
     onDuplicate(duplicateName);
     setIsDuplicateDialogOpen(false);
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete();
   };
 
   const calculateTotalDuration = () => {
@@ -125,24 +119,15 @@ export function RoutineCard({ routine, onEdit, onDelete, onDuplicate }: RoutineC
               Created {formatDistanceToNow(new Date(routine.createdAt), { addSuffix: true })}
             </p>
           </div>
-          <div className="flex gap-1 ml-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDuplicateClick}
-              className="h-9 w-9"
-            >
-              <Copy className="h-4 w-2" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDeleteClick}
-              className="h-9 w-9 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDuplicateClick}
+            className="h-9 w-9 ml-2"
+            title='Duplicate Routine'
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
         </CardHeader>
 
         <CardContent>

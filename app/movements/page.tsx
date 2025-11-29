@@ -75,7 +75,6 @@ export default function MovementsPage() {
         movements={movements}
         isLoading={isLoading}
         onEdit={handleEdit}
-        onDelete={handleDelete}
         onAddMovement={handleAddMovement}
       />
 
@@ -88,6 +87,7 @@ export default function MovementsPage() {
           setIsDialogOpen(false);
           setEditingId(null);
         }}
+        onDelete={handleDelete}
       />
 
       {/* Delete Confirmation Dialog */}

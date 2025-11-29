@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { RoutinesList } from '@/components/routines/RoutinesList';
-import { RoutineDrawer } from '@/components/routines/RoutineDrawer';
+import { RoutineDrawer } from '@/components/routines/RoutineDialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -113,7 +113,6 @@ export default function RoutinesPage() {
         routines={routines}
         isLoading={isLoading}
         onEdit={handleEdit}
-        onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onAddRoutine={handleAddRoutine}
       />
@@ -127,6 +126,7 @@ export default function RoutinesPage() {
           setIsDrawerOpen(false);
           setEditingId(null);
         }}
+        onDelete={handleDelete}
       />
 
       {/* Delete Confirmation Dialog */}

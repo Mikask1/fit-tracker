@@ -68,6 +68,28 @@ export function MuscleDistributionChart({
     percentage: ((item.volume / totalVolume) * 100).toFixed(1),
   }));
 
+  // Custom label renderer with closer positioning
+  const renderCustomLabel = (props: any) => {
+    const { cx, cy, midAngle, outerRadius, name, percentage } = props;
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 5; // Reduced distance from pie edge
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="currentColor"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        style={{ fontSize: '11px' }}
+      >
+        {`${name} ${percentage}%`}
+      </text>
+    );
+  };
+
   return (
     <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
       <PieChart>
@@ -76,7 +98,7 @@ export function MuscleDistributionChart({
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={(entry: any) => `${entry.name} ${entry.percentage}%`}
+          label={renderCustomLabel}
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"

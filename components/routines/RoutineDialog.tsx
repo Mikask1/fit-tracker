@@ -6,13 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from '@/components/ui/drawer';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -27,6 +27,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExerciseList } from './ExerciseList';
 import { AddExerciseDrawer } from './AddExerciseDrawer';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 const exerciseSchema = z.object({
   movementId: z.string(),
@@ -50,6 +51,7 @@ interface RoutineDrawerProps {
   onOpenChange: (open: boolean) => void;
   editingId: string | null;
   onSuccess?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export function RoutineDrawer({
@@ -57,6 +59,7 @@ export function RoutineDrawer({
   onOpenChange,
   editingId,
   onSuccess,
+  onDelete,
 }: RoutineDrawerProps) {
   const utils = trpc.useUtils();
   const isEditing = !!editingId;
@@ -200,18 +203,18 @@ export function RoutineDrawer({
 
   return (
     <>
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh] flex flex-col">
-          <DrawerHeader>
-            <DrawerTitle>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
               {isEditing ? 'Edit Routine' : 'Create New Routine'}
-            </DrawerTitle>
-            <DrawerDescription>
+            </DialogTitle>
+            <DialogDescription>
               {isEditing
                 ? 'Update the routine details and exercises below.'
                 : 'Add a new workout routine to your library.'}
-            </DrawerDescription>
-          </DrawerHeader>
+            </DialogDescription>
+          </DialogHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
@@ -266,45 +269,43 @@ export function RoutineDrawer({
                       <p className="text-sm mt-1">Click "Add Movement" to get started</p>
                     </div>
                   ) : (
-                    <div data-vaul-no-drag>
-                      <ExerciseList
-                        exercises={exercises}
-                        onChange={handleUpdateExercises}
-                      />
-                    </div>
+                    <ExerciseList
+                      exercises={exercises}
+                      onChange={handleUpdateExercises}
+                    />
                   )}
                 </div>
               </ScrollArea>
             </form>
           </Form>
 
-          <DrawerFooter className="border-t">
-            <div className="flex gap-2 w-full">
+          <DialogFooter className="border-t gap-2 flex-row">
+            {isEditing && onDelete && (
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
+                variant="destructive"
+                onClick={() => onDelete(editingId)}
                 disabled={isLoading}
-                className="flex-1 min-h-11"
+                className="w-auto min-h-11"
               >
-                Cancel
+                <Trash2 className="h-4 w-4" />
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                onClick={form.handleSubmit(onSubmit)}
-                className="flex-1 min-h-11"
-              >
-                {isLoading
-                  ? 'Saving...'
-                  : isEditing
-                    ? 'Update Routine'
-                    : 'Create Routine'}
-              </Button>
-            </div>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+            )}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              onClick={form.handleSubmit(onSubmit)}
+              className="flex-1 min-h-11"
+            >
+              {isLoading
+                ? 'Saving...'
+                : isEditing
+                  ? 'Update Routine'
+                  : 'Create Routine'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Exercise Drawer */}
       <AddExerciseDrawer

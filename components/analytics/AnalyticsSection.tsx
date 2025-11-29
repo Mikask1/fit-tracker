@@ -30,13 +30,15 @@ export function AnalyticsSection() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Analytics</h2>
-      {/* Date Range Selector */}
-      <DateRangeSelector
-        selectedRange={dateRange.option}
-        onRangeChange={handleRangeChange}
-      />
+    <div className="space-y-6 mt-6">
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+        <h2 className="text-2xl font-bold">Analytics</h2>
+        {/* Date Range Selector */}
+        <DateRangeSelector
+          selectedRange={dateRange.option}
+          onRangeChange={handleRangeChange}
+        />
+      </div>
 
       {/* Consistency Metrics */}
       <div>
@@ -63,7 +65,7 @@ export function AnalyticsSection() {
       <div>
         <h3 className="text-lg font-semibold mb-3">Progressive Overload</h3>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3">
             <ProgressiveOverloadChart
               startDate={dateRange.from}
               endDate={dateRange.to}

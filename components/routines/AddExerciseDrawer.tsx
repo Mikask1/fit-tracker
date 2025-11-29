@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MAIN_MUSCLE_GROUPS } from '@/lib/constants/muscleGroups';
 import { Dumbbell } from 'lucide-react';
-import type { ExerciseFormData } from './RoutineDrawer';
+import type { ExerciseFormData } from './RoutineDialog';
 
 interface AddExerciseDrawerProps {
   open: boolean;

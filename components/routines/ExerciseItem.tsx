@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
-import type { ExerciseFormData } from './RoutineDrawer';
+import type { ExerciseFormData } from './RoutineDialog';
 
 interface ExerciseItemProps {
   exercise: ExerciseFormData;

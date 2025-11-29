@@ -314,13 +314,6 @@ export function SessionDrawer({
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Session
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  className="min-h-11"
-                >
-                  Close
-                </Button>
               </>
             )}
 
@@ -334,14 +327,6 @@ export function SessionDrawer({
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Session
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  Cancel
                 </Button>
               </>
             )}
@@ -375,14 +360,6 @@ export function SessionDrawer({
                   className="min-h-11"
                 >
                   {isLoading ? 'Creating...' : 'Create Session'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  Cancel
                 </Button>
               </>
             )}

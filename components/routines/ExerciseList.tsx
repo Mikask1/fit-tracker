@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { ExerciseItem } from './ExerciseItem';
-import type { ExerciseFormData } from './RoutineDrawer';
+import type { ExerciseFormData } from './RoutineDialog';
 
 interface ExerciseListProps {
   exercises: ExerciseFormData[];

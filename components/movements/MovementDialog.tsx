@@ -27,6 +27,7 @@ import { MuscleGroupSelector } from './MuscleGroupSelector';
 import { YouTubePreview } from './YouTubePreview';
 import { MuscleGroupSelection } from '@/lib/constants/muscleGroups';
 import { toast } from 'sonner';
+import { Trash2 } from 'lucide-react';
 
 const movementSchema = z.object({
   name: z.string().min(1, 'Movement name is required'),
@@ -63,6 +64,7 @@ interface MovementDialogProps {
   onOpenChange: (open: boolean) => void;
   editingId: string | null;
   onSuccess?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export function MovementDialog({
@@ -70,6 +72,7 @@ export function MovementDialog({
   onOpenChange,
   editingId,
   onSuccess,
+  onDelete,
 }: MovementDialogProps) {
   const utils = trpc.useUtils();
   const isEditing = !!editingId;
@@ -269,31 +272,35 @@ export function MovementDialog({
             />
 
             {/* Footer */}
-            <DialogFooter className="gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isLoading}
-                className="min-h-11"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="min-h-11"
-              >
-                {isLoading
-                  ? 'Saving...'
-                  : isEditing
-                    ? 'Update Movement'
-                    : 'Create Movement'}
-              </Button>
+            <DialogFooter className="gap-2 flex-row">
+              {isEditing && onDelete && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => onDelete(editingId)}
+                  disabled={isLoading}
+                  className="min-h-11 w-auto"
+                >
+                  <Trash2 />
+                </Button>
+              )}
+              <div className='w-full'>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="min-h-11 w-full"
+                >
+                  {isLoading
+                    ? 'Saving...'
+                    : isEditing
+                      ? 'Update Movement'
+                      : 'Create Movement'}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

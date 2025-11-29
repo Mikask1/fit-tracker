@@ -324,7 +324,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
 
       {/* Body - Scrollable exercise list */}
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6 space-y-4">
+        <div className="container mx-auto px-4 py-6 pb-32 space-y-4">
           {groupedLogs.map(({ log, index, exerciseDetails, isSupersetStart, isSupersetContinuation }) => (
             <ExerciseLogCard
               key={index}
@@ -342,7 +342,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
       </ScrollArea>
 
       {/* Footer - Sticky action buttons */}
-      <div className="border-t bg-background sticky bottom-0 z-10">
+      <div className="border-t bg-background sticky bottom-0 z-50 pb-20">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-2">
             <Button
@@ -351,14 +351,6 @@ export default function SessionLoggingPage({ params }: PageProps) {
               className="w-full min-h-11"
             >
               {updateMutation.isPending ? 'Saving...' : 'Complete Workout'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/calendar')}
-              disabled={updateMutation.isPending}
-              className="w-full min-h-11"
-            >
-              Cancel
             </Button>
           </div>
         </div>

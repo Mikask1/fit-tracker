@@ -30,7 +30,6 @@ interface MovementsListProps {
   movements?: Movement[];
   isLoading: boolean;
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
   onAddMovement: () => void;
 }
 
@@ -38,7 +37,6 @@ export function MovementsList({
   movements = [],
   isLoading,
   onEdit,
-  onDelete,
   onAddMovement,
 }: MovementsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,7 +109,6 @@ export function MovementsList({
               key={movement._id}
               movement={movement}
               onEdit={() => onEdit(movement._id)}
-              onDelete={() => onDelete(movement._id)}
             />
           ))}
         </div>

@@ -27,7 +27,6 @@ interface RoutinesListProps {
   routines?: Routine[];
   isLoading: boolean;
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
   onDuplicate: (id: string, newName: string) => void;
   onAddRoutine: () => void;
 }
@@ -36,7 +35,6 @@ export function RoutinesList({
   routines = [],
   isLoading,
   onEdit,
-  onDelete,
   onDuplicate,
   onAddRoutine,
 }: RoutinesListProps) {
@@ -99,7 +97,6 @@ export function RoutinesList({
               key={routine._id}
               routine={routine}
               onEdit={() => onEdit(routine._id)}
-              onDelete={() => onDelete(routine._id)}
               onDuplicate={(newName) => onDuplicate(routine._id, newName)}
             />
           ))}
