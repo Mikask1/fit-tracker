@@ -107,14 +107,6 @@ export default function CalendarPage() {
     <div className="container mx-auto px-4 py-6 pb-24">
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Workout Calendar</h1>
-            <p className="text-muted-foreground mt-1">
-              Track your workouts and manage your schedule
-            </p>
-          </div>
-        </div>
 
         {/* Calendar Header (Month Navigation) */}
         <CalendarHeader
