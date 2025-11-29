@@ -20,7 +20,6 @@ interface Exercise {
   movementId: any;
   targetSets: number;
   targetReps: number;
-  supersetWith: string[];
   order: number;
 }
 
@@ -59,45 +58,11 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
 
   const calculateTotalDuration = () => {
     const setDuration = 60; // seconds per set
-
-    // Build superset groups
-    const processedIds = new Set<string>();
-    const supersetGroups: string[][] = [];
-
-    routine.exercises.forEach((exercise) => {
-      const exerciseId = typeof exercise.movementId === 'object'
-        ? exercise.movementId._id
-        : exercise.movementId;
-
-      if (processedIds.has(exerciseId)) return;
-
-      if (exercise.supersetWith.length > 0) {
-        // Build the superset group
-        const group = [exerciseId, ...exercise.supersetWith.map(id =>
-          typeof id === 'object' ? ((id as any)._id) : id
-        )];
-        supersetGroups.push(group);
-        group.forEach(id => processedIds.add(id));
-      }
-    });
+    const restBetweenSets = 180; // 3 minutes rest (fixed)
 
     const totalSeconds = routine.exercises.reduce((total, exercise) => {
-      const exerciseId = typeof exercise.movementId === 'object'
-        ? exercise.movementId._id
-        : exercise.movementId;
-
-      // Find superset group size
-      const supersetGroup = supersetGroups.find(group => group.includes(exerciseId));
-      const supersetSize = supersetGroup ? supersetGroup.length : 1;
-
-      // Rest formula: (4 - superset_size) minutes
-      // 1 exercise (regular): 3 min rest
-      // 2 exercise superset: 2 min rest
-      // 3 exercise superset: 1 min rest
-      const restMinutes = 4 - supersetSize;
-      const restBetweenSets = restMinutes * 60; // convert to seconds
-
-      const exerciseSeconds = (exercise.targetSets * setDuration) + ((exercise.targetSets - 1) * restBetweenSets);
+      const exerciseSeconds = (exercise.targetSets * setDuration) +
+                             ((exercise.targetSets - 1) * restBetweenSets);
       return total + exerciseSeconds;
     }, 0);
 
@@ -141,7 +106,6 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
               .slice(0, previewLimit)
               .sort((a, b) => a.order - b.order)
               .map((exercise, index) => {
-                const isSuperset = exercise.supersetWith.length > 0;
                 const movementName = typeof exercise.movementId === 'object'
                   ? exercise.movementId?.name || 'Unknown'
                   : 'Unknown';
@@ -149,11 +113,7 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
                 return (
                   <div
                     key={index}
-                    className={`text-sm ${
-                      isSuperset
-                        ? 'border-l-4 border-primary pl-3 py-1'
-                        : 'pl-1'
-                    }`}
+                    className="text-sm pl-1"
                   >
                     <span className="font-medium">
                       {index + 1}. {movementName}

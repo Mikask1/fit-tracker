@@ -19,8 +19,6 @@ interface ExerciseLogCardProps {
     targetSets: number;
     targetReps: number;
   };
-  isSupersetStart: boolean;
-  isSupersetContinuation: boolean;
   onAddSet: (index: number) => void;
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
@@ -30,8 +28,6 @@ export function ExerciseLogCard({
   log,
   index,
   exerciseDetails,
-  isSupersetStart,
-  isSupersetContinuation,
   onAddSet,
   onRemoveSet,
   onUpdateSet,
@@ -44,10 +40,7 @@ export function ExerciseLogCard({
 
   return (
     <div
-      className={cn(
-        'border rounded-lg p-4 space-y-3 bg-card',
-        (isSupersetStart || isSupersetContinuation) && 'border-l-4 border-primary'
-      )}
+      className="border rounded-lg p-4 space-y-3 bg-card"
     >
       {/* Exercise Header */}
       <div className="flex items-start justify-between">
@@ -69,11 +62,6 @@ export function ExerciseLogCard({
                   ({format(new Date(lastCompleted.date), 'MMM d')})
                 </span>
               )}
-            </p>
-          )}
-          {(isSupersetStart || isSupersetContinuation) && (
-            <p className="text-xs text-primary mt-1">
-              Supersetted
             </p>
           )}
         </div>

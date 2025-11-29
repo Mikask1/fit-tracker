@@ -35,7 +35,6 @@ export interface IExercise {
   targetSets: number;
   targetReps: number;
   targetWeight: number;
-  supersetWith: any[];
   order: number;
 }
 
@@ -104,7 +103,6 @@ export interface RoutineFormData {
     targetSets: number;
     targetReps: number;
     targetWeight: number;
-    supersetWith: string[];
     order: number;
   }>;
 }

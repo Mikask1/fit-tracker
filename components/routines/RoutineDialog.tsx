@@ -34,7 +34,6 @@ const exerciseSchema = z.object({
   targetSets: z.number().min(1).max(20),
   targetReps: z.number().min(1).max(999),
   targetWeight: z.number().min(0).max(9999),
-  supersetWith: z.array(z.string()),
   order: z.number().min(0),
 });
 
@@ -92,9 +91,6 @@ export function RoutineDrawer({
             targetSets: ex.targetSets,
             targetReps: ex.targetReps,
             targetWeight: ex.targetWeight || 0,
-            supersetWith: ex.supersetWith.map((id: any) =>
-              typeof id === 'object' ? id._id : id
-            ),
             order: ex.order,
           })),
         });
@@ -165,35 +161,11 @@ export function RoutineDrawer({
     if (exercises.length === 0) return null;
 
     const setDuration = 60; // seconds per set
-
-    // Build superset groups
-    const processedIds = new Set<string>();
-    const supersetGroups: string[][] = [];
-
-    exercises.forEach((exercise) => {
-      if (processedIds.has(exercise.movementId)) return;
-
-      if (exercise.supersetWith.length > 0) {
-        // Build the superset group
-        const group = [exercise.movementId, ...exercise.supersetWith];
-        supersetGroups.push(group);
-        group.forEach(id => processedIds.add(id));
-      }
-    });
+    const restBetweenSets = 180; // 3 minutes rest (fixed)
 
     const totalSeconds = exercises.reduce((total, exercise) => {
-      // Find superset group size
-      const supersetGroup = supersetGroups.find(group => group.includes(exercise.movementId));
-      const supersetSize = supersetGroup ? supersetGroup.length : 1;
-
-      // Rest formula: (4 - superset_size) minutes
-      // 1 exercise (regular): 3 min rest
-      // 2 exercise superset: 2 min rest
-      // 3 exercise superset: 1 min rest
-      const restMinutes = 4 - supersetSize;
-      const restBetweenSets = restMinutes * 60; // convert to seconds
-
-      const exerciseSeconds = (exercise.targetSets * setDuration) + ((exercise.targetSets - 1) * restBetweenSets);
+      const exerciseSeconds = (exercise.targetSets * setDuration) +
+                             ((exercise.targetSets - 1) * restBetweenSets);
       return total + exerciseSeconds;
     }, 0);
 
@@ -204,7 +176,7 @@ export function RoutineDrawer({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[95vh] flex flex-col px-2! sm:px-6!">
           <DialogHeader>
             <DialogTitle>
               {isEditing ? 'Edit Routine' : 'Create New Routine'}
@@ -219,7 +191,7 @@ export function RoutineDrawer({
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
               {/* Routine Name - Sticky at top */}
-              <div className="px-4 pt-4 pb-3 border-b">
+              <div className="px-1 pt-4 pb-3 border-b">
                 <FormField
                   control={form.control}
                   name="name"
@@ -240,7 +212,7 @@ export function RoutineDrawer({
               </div>
 
               {/* Movements Header - Sticky */}
-              <div className="px-4 py-3 border-b flex justify-between items-center bg-background">
+              <div className="px-1 py-3 border-b flex justify-between items-center bg-background">
                 <div className="flex flex-col">
                   <FormLabel>Movements</FormLabel>
                   {exercises.length > 0 && (
@@ -262,7 +234,7 @@ export function RoutineDrawer({
 
               {/* Exercise List - Scrollable */}
               <ScrollArea className="flex-1 overflow-auto">
-                <div className="px-4 py-4">
+                <div className="pr-1 py-4">
                   {exercises.length === 0 ? (
                     <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
                       <p>No exercises added yet</p>

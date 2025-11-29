@@ -11,7 +11,6 @@ interface Exercise {
   movementId: any;
   targetSets: number;
   targetReps: number;
-  supersetWith: any[];
   order: number;
 }
 

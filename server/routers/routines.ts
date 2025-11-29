@@ -9,7 +9,6 @@ const exerciseSchema = z.object({
   targetSets: z.number().min(1).max(20),
   targetReps: z.number().min(1).max(999),
   targetWeight: z.number().min(0).max(9999).default(0),
-  supersetWith: z.array(z.string()).default([]),
   order: z.number().min(0),
 });
 
@@ -28,7 +27,6 @@ export const routinesRouter = router({
         exercises: input.exercises.map((ex) => ({
           ...ex,
           movementId: new mongoose.Types.ObjectId(ex.movementId),
-          supersetWith: ex.supersetWith.map((id) => new mongoose.Types.ObjectId(id)),
         })),
       });
 
@@ -76,7 +74,6 @@ export const routinesRouter = router({
         updateData.exercises = exercises.map((ex) => ({
           ...ex,
           movementId: new mongoose.Types.ObjectId(ex.movementId),
-          supersetWith: ex.supersetWith.map((id) => new mongoose.Types.ObjectId(id)),
         }));
       }
 

@@ -72,9 +72,6 @@ export default function RoutinesPage() {
           movementId: typeof ex.movementId === 'object' ? ex.movementId._id.toString() : ex.movementId.toString(),
           targetSets: ex.targetSets,
           targetReps: ex.targetReps,
-          supersetWith: ex.supersetWith.map((id: any) =>
-            typeof id === 'object' ? id._id.toString() : id.toString()
-          ),
           order: ex.order,
         })),
       });

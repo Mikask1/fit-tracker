@@ -196,9 +196,6 @@ export default function SessionLoggingPage({ params }: PageProps) {
               targetSets: log.sets.length, // Actual number of sets performed
               targetReps: avgReps, // Average reps performed
               targetWeight: avgWeight, // Average weight used
-              supersetWith: ex.supersetWith.map((id: any) =>
-                typeof id === 'object' ? id._id?.toString() || id.toString() : id.toString()
-              ),
               order: ex.order,
             };
           }
@@ -209,9 +206,6 @@ export default function SessionLoggingPage({ params }: PageProps) {
             targetSets: ex.targetSets,
             targetReps: ex.targetReps,
             targetWeight: ex.targetWeight || 0,
-            supersetWith: ex.supersetWith.map((id: any) =>
-              typeof id === 'object' ? id._id?.toString() || id.toString() : id.toString()
-            ),
             order: ex.order,
           };
         });
@@ -279,23 +273,10 @@ export default function SessionLoggingPage({ params }: PageProps) {
     );
   }
 
-  // Group exercises for superset display
-  const groupedLogs = logs.map((log, index) => {
+  // Map exercises for display
+  const exerciseLogs = logs.map((log, index) => {
     const exerciseDetails = getExerciseDetails(log.movementId);
-    const supersetWith = exerciseDetails?.supersetWith || [];
-    return {
-      log,
-      index,
-      exerciseDetails,
-      isSupersetStart: supersetWith.length > 0,
-      isSupersetContinuation: routineExercises.some((ex: any) => {
-        const exSupersetWith = ex.supersetWith || [];
-        return exSupersetWith.some((id: any) => {
-          const supersetId = typeof id === 'object' ? id.toString() : id;
-          return supersetId === log.movementId;
-        });
-      }),
-    };
+    return { log, index, exerciseDetails };
   });
 
   return (
@@ -325,14 +306,12 @@ export default function SessionLoggingPage({ params }: PageProps) {
       {/* Body - Scrollable exercise list */}
       <ScrollArea className="flex-1">
         <div className="container mx-auto px-4 py-6 pb-32 space-y-4">
-          {groupedLogs.map(({ log, index, exerciseDetails, isSupersetStart, isSupersetContinuation }) => (
+          {exerciseLogs.map(({ log, index, exerciseDetails }) => (
             <ExerciseLogCard
               key={index}
               log={log}
               index={index}
               exerciseDetails={exerciseDetails}
-              isSupersetStart={isSupersetStart}
-              isSupersetContinuation={isSupersetContinuation}
               onAddSet={addSet}
               onRemoveSet={removeSet}
               onUpdateSet={updateSet}

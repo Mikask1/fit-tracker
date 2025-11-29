@@ -82,7 +82,6 @@ export function AddExerciseDrawer({
       targetSets: 3,
       targetReps: 12,
       targetWeight: 0,
-      supersetWith: [],
       order: 0, // Will be set by parent
     };
     onAddExercise(newExercise);

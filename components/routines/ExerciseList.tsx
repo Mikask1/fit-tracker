@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -16,6 +18,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { ExerciseItem } from './ExerciseItem';
+import { ExerciseEditDialog } from './ExerciseEditDialog';
 import type { ExerciseFormData } from './RoutineDialog';
 
 interface ExerciseListProps {
@@ -24,16 +27,34 @@ interface ExerciseListProps {
 }
 
 export function ExerciseList({ exercises, onChange }: ExerciseListProps) {
+  const [editingExercise, setEditingExercise] = useState<ExerciseFormData | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const sensors = useSensors(
+    // Mouse/Desktop: Small distance for accidental drag prevention
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 10, // Prevent accidental drags on mobile
+        distance: 8,
       },
     }),
+    // Touch/Mobile: Long-press activation
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 500,      // 500ms long-press
+        tolerance: 5,    // Allow 5px movement during delay
+      },
+    }),
+    // Keyboard: Accessibility
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  function handleDragStart() {
+    // Trigger haptic feedback on drag start (mobile long-press)
+    if ('vibrate' in navigator) {
+      navigator.vibrate(100); // 50ms vibration
+    }
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -75,62 +96,56 @@ export function ExerciseList({ exercises, onChange }: ExerciseListProps) {
     onChange(reordered);
   }
 
-  function handleToggleSuperset(sourceId: string, targetId: string) {
-    const updated = exercises.map((ex) => {
-      if (ex.movementId === sourceId) {
-        const isCurrentlySuperset = ex.supersetWith.includes(targetId);
-        return {
-          ...ex,
-          supersetWith: isCurrentlySuperset
-            ? ex.supersetWith.filter((id) => id !== targetId)
-            : [...ex.supersetWith, targetId],
-        };
-      }
-      if (ex.movementId === targetId) {
-        const isCurrentlySuperset = ex.supersetWith.includes(sourceId);
-        return {
-          ...ex,
-          supersetWith: isCurrentlySuperset
-            ? ex.supersetWith.filter((id) => id !== sourceId)
-            : [...ex.supersetWith, sourceId],
-        };
-      }
-      return ex;
-    });
-    onChange(updated);
+  function handleEditExercise(exercise: ExerciseFormData) {
+    setEditingExercise(exercise);
+    setIsEditDialogOpen(true);
+  }
+
+  function handleSaveEdit(updates: Partial<ExerciseFormData>) {
+    if (editingExercise) {
+      handleUpdateExercise(editingExercise.movementId, updates);
+    }
+  }
+
+  function handleDeleteFromDialog() {
+    if (editingExercise) {
+      handleDeleteExercise(editingExercise.movementId);
+    }
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={exercises.map((ex) => `${ex.movementId}-${ex.order}`)}
-        strategy={verticalListSortingStrategy}
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
       >
-        <div className="space-y-3" style={{ touchAction: 'none' }}>
-          {exercises
-            .sort((a, b) => a.order - b.order)
-            .map((exercise, index) => (
-              <ExerciseItem
-                key={`${exercise.movementId}-${exercise.order}`}
-                exercise={exercise}
-                index={index}
-                totalExercises={exercises.length}
-                onUpdate={(updates) =>
-                  handleUpdateExercise(exercise.movementId, updates)
-                }
-                onDelete={() => handleDeleteExercise(exercise.movementId)}
-                onToggleSuperset={(targetId) =>
-                  handleToggleSuperset(exercise.movementId, targetId)
-                }
-                nextExercise={exercises[index + 1]}
-              />
-            ))}
-        </div>
-      </SortableContext>
-    </DndContext>
+        <SortableContext
+          items={exercises.map((ex) => `${ex.movementId}-${ex.order}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-3">
+            {exercises
+              .sort((a, b) => a.order - b.order)
+              .map((exercise) => (
+                <ExerciseItem
+                  key={`${exercise.movementId}-${exercise.order}`}
+                  exercise={exercise}
+                  onEdit={handleEditExercise}
+                />
+              ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <ExerciseEditDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        exercise={editingExercise}
+        onSave={handleSaveEdit}
+        onDelete={handleDeleteFromDialog}
+      />
+    </>
   );
 }

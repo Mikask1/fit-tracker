@@ -5,7 +5,6 @@ export interface IExercise {
   targetSets: number;
   targetReps: number;
   targetWeight: number;
-  supersetWith: mongoose.Types.ObjectId[];
   order: number;
 }
 
@@ -43,11 +42,6 @@ const exerciseSchema = new Schema<IExercise>(
       min: [0, 'Weight cannot be negative'],
       max: [9999, 'Cannot exceed 9999 kg'],
       default: 0,
-    },
-    supersetWith: {
-      type: [Schema.Types.ObjectId],
-      ref: 'Movement',
-      default: [],
     },
     order: {
       type: Number,
