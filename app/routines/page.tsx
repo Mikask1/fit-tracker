@@ -19,8 +19,8 @@ export default function RoutinesPage() {
   const utils = trpc.useUtils();
 
   const deleteMutation = trpc.routines.delete.useMutation({
-    onSuccess: () => {
-      utils.routines.list.invalidate();
+    onSuccess: async () => {
+      await utils.routines.list.invalidate();
       toast.success('Routine deleted successfully');
     },
     onError: (error) => {
@@ -29,8 +29,8 @@ export default function RoutinesPage() {
   });
 
   const createMutation = trpc.routines.create.useMutation({
-    onSuccess: () => {
-      utils.routines.list.invalidate();
+    onSuccess: async () => {
+      await utils.routines.list.invalidate();
       toast.success('Routine duplicated successfully');
     },
     onError: (error) => {

@@ -2,28 +2,37 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyToken } from '@/lib/utils/jwt';
 
+// Routes that require authentication
+const PROTECTED_ROUTES = ['/', '/movements', '/routines', '/calendar'];
+
+// Routes that should redirect to home if authenticated
+const AUTH_ROUTES = ['/login', '/signup'];
+
 export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Get token from cookies
   const token = request.cookies.get('fittrack-token')?.value;
   const isAuthenticated = token ? verifyToken(token) !== null : false;
 
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
-                     request.nextUrl.pathname.startsWith('/signup');
+  // Check if current path is protected
+  const isProtectedRoute = PROTECTED_ROUTES.some(route =>
+    pathname === route || pathname.startsWith(`${route}/`)
+  );
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthenticated && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // Check if current path is an auth route
+  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+
+  // Redirect unauthenticated users from protected routes to login
+  if (isProtectedRoute && !isAuthenticated) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect unauthenticated users to login
-  if (!isAuthenticated && !isAuthPage && request.nextUrl.pathname !== '/') {
-    // Allow API routes and static files
-    if (
-      request.nextUrl.pathname.startsWith('/api') ||
-      request.nextUrl.pathname.startsWith('/_next') ||
-      request.nextUrl.pathname.includes('.')
-    ) {
-      return NextResponse.next();
-    }
+  // Redirect authenticated users from auth routes to home
+  if (isAuthRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();
@@ -31,6 +40,14 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all request paths except:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (public folder)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|trpc).*)',
   ],
 };

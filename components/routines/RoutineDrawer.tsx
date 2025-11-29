@@ -106,8 +106,8 @@ export function RoutineDrawer({
   }, [open, isEditing, routineData, form]);
 
   const createMutation = trpc.routines.create.useMutation({
-    onSuccess: () => {
-      utils.routines.list.invalidate();
+    onSuccess: async () => {
+      await utils.routines.list.invalidate();
       toast.success('Routine created successfully!');
       onSuccess?.();
     },
@@ -117,8 +117,11 @@ export function RoutineDrawer({
   });
 
   const updateMutation = trpc.routines.update.useMutation({
-    onSuccess: () => {
-      utils.routines.list.invalidate();
+    onSuccess: async () => {
+      await Promise.all([
+        utils.routines.list.invalidate(),
+        utils.routines.getById.invalidate({ id: editingId! }),
+      ]);
       toast.success('Routine updated successfully!');
       onSuccess?.();
     },

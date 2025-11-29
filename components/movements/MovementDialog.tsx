@@ -117,8 +117,8 @@ export function MovementDialog({
   }, [open, isEditing, movementData, form]);
 
   const createMutation = trpc.movements.create.useMutation({
-    onSuccess: () => {
-      utils.movements.list.invalidate();
+    onSuccess: async () => {
+      await utils.movements.list.invalidate();
       toast.success('Movement created successfully!');
       onSuccess?.();
     },
@@ -128,8 +128,8 @@ export function MovementDialog({
   });
 
   const updateMutation = trpc.movements.update.useMutation({
-    onSuccess: () => {
-      utils.movements.list.invalidate();
+    onSuccess: async () => {
+      await utils.movements.list.invalidate();
       toast.success('Movement updated successfully!');
       onSuccess?.();
     },

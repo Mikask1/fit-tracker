@@ -81,13 +81,13 @@ export function ScheduleDrawer({
 
   // Mutations
   const createMutation = trpc.schedules.create.useMutation({
-    onSuccess: () => {
-      utils.schedules.list.invalidate();
+    onSuccess: async () => {
+      await utils.schedules.list.invalidate();
       toast.success('Schedule created successfully!');
       // Auto-generate sessions after schedule creation
       generateSessions(undefined, {
-        onSuccess: () => {
-          utils.sessions.listByDateRange.invalidate();
+        onSuccess: async () => {
+          await utils.sessions.listByDateRange.invalidate();
         },
       });
       onSuccess?.();
@@ -99,13 +99,13 @@ export function ScheduleDrawer({
   });
 
   const updateMutation = trpc.schedules.update.useMutation({
-    onSuccess: () => {
-      utils.schedules.list.invalidate();
+    onSuccess: async () => {
+      await utils.schedules.list.invalidate();
       toast.success('Schedule updated successfully!');
       // Auto-generate sessions after schedule update
       generateSessions(undefined, {
-        onSuccess: () => {
-          utils.sessions.listByDateRange.invalidate();
+        onSuccess: async () => {
+          await utils.sessions.listByDateRange.invalidate();
         },
       });
       onSuccess?.();

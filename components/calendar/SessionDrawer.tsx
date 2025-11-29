@@ -98,8 +98,8 @@ export function SessionDrawer({
 
   // Mutations
   const createMutation = trpc.sessions.create.useMutation({
-    onSuccess: () => {
-      utils.sessions.listByDateRange.invalidate();
+    onSuccess: async () => {
+      await utils.sessions.listByDateRange.invalidate();
       toast.success('Session created successfully!');
       onSuccess?.();
     },
@@ -109,8 +109,8 @@ export function SessionDrawer({
   });
 
   const updateMutation = trpc.sessions.update.useMutation({
-    onSuccess: () => {
-      utils.sessions.listByDateRange.invalidate();
+    onSuccess: async () => {
+      await utils.sessions.listByDateRange.invalidate();
       toast.success('Session updated successfully!');
       onSuccess?.();
     },
@@ -120,8 +120,8 @@ export function SessionDrawer({
   });
 
   const deleteMutation = trpc.sessions.delete.useMutation({
-    onSuccess: () => {
-      utils.sessions.listByDateRange.invalidate();
+    onSuccess: async () => {
+      await utils.sessions.listByDateRange.invalidate();
       toast.success('Session deleted successfully!');
       onSuccess?.();
     },

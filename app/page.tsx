@@ -2,10 +2,8 @@
 
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dumbbell, X, BarChart3 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dumbbell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { WeeklyStats } from '@/components/calendar/WeeklyStats';
 import { AnalyticsSection } from '@/components/analytics/AnalyticsSection';

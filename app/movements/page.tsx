@@ -19,8 +19,8 @@ export default function MovementsPage() {
   const utils = trpc.useUtils();
 
   const deleteMutation = trpc.movements.delete.useMutation({
-    onSuccess: () => {
-      utils.movements.list.invalidate();
+    onSuccess: async () => {
+      await utils.movements.list.invalidate();
       toast.success('Movement deleted successfully');
     },
     onError: (error) => {

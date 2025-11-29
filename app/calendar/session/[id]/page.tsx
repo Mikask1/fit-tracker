@@ -71,8 +71,8 @@ export default function SessionLoggingPage({ params }: PageProps) {
 
   // Update mutation
   const updateMutation = trpc.sessions.update.useMutation({
-    onSuccess: () => {
-      utils.sessions.listByDateRange.invalidate();
+    onSuccess: async () => {
+      await utils.sessions.listByDateRange.invalidate();
       toast.success('Workout logged successfully!');
       router.push('/calendar');
     },
@@ -222,7 +222,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
           exercises: updatedExercises,
         });
 
-        utils.routines.getById.invalidate({ id: session.sourceRoutineId.toString() });
+        await utils.routines.getById.invalidate({ id: session.sourceRoutineId.toString() });
       } catch (error) {
         console.error('Failed to update routine:', error);
         // Don't block the user, workout was already saved

@@ -30,8 +30,8 @@ export function WeeklyStats() {
 
   // Update mutation
   const updateMutation = trpc.auth.updatePreferences.useMutation({
-    onSuccess: () => {
-      utils.auth.me.invalidate();
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
       toast.success('Expected workouts updated!');
       setIsEditing(false);
     },
