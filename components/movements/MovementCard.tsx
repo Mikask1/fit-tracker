@@ -12,7 +12,6 @@ interface Movement {
     specific: string | null;
     sub: string | null; // DEPRECATED
   }>;
-  youtubeLink?: string;
   image?: string;
   note?: string;
 }
@@ -64,7 +63,7 @@ export function MovementCard({ movement, onEdit }: MovementCardProps) {
             <img
               src={movement.image}
               alt={movement.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
         </CardContent>

@@ -33,7 +33,7 @@ export function GetStartedCard({ setShowGettingStarted }: { setShowGettingStarte
                     Create Movements
                 </h3>
                 <p className="text-sm text-muted-foreground ml-8">
-                    Add exercises to your library with muscle groups, YouTube links, and images.
+                    Add exercises to your library with muscle groups, and images.
                 </p>
             </div>
             <div className="space-y-2">

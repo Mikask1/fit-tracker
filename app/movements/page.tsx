@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { MovementsList } from '@/components/movements/MovementsList';
-import { MovementDialog } from '@/components/movements/MovementDialog';
+import { MovementDialog } from '@/components/movements/MovementDrawer';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -21,6 +21,10 @@ export default function MovementsPage() {
   const deleteMutation = trpc.movements.delete.useMutation({
     onSuccess: async () => {
       await utils.movements.list.invalidate();
+      setIsDeleteDialogOpen(false);
+      setDeletingId(null);
+      setIsDialogOpen(false);
+      setEditingId(null);
       toast.success('Movement deleted successfully');
     },
     onError: (error) => {

@@ -13,7 +13,6 @@ export interface IMovement extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
   muscleGroups: IMuscleGroup[]; // Changed to array
-  youtubeLink?: string;
   image?: string;
   note?: string;
   createdAt: Date;
@@ -69,17 +68,6 @@ const movementSchema = new Schema<IMovement>(
           return v && v.length > 0;
         },
         message: 'At least one muscle group is required',
-      },
-    },
-    youtubeLink: {
-      type: String,
-      trim: true,
-      validate: {
-        validator: function (v: string) {
-          if (!v) return true;
-          return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(v);
-        },
-        message: 'Invalid YouTube URL',
       },
     },
     image: {

@@ -19,10 +19,6 @@ export const movementsRouter = router({
             })
           )
           .min(1, 'At least one muscle group is required'),
-        youtubeLink: z.union([
-          z.string().url('Must be a valid URL'),
-          z.literal('')
-        ]).optional(),
         image: z.union([
           z.string().url('Must be a valid URL'),
           z.literal('')
@@ -31,6 +27,19 @@ export const movementsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Check for duplicate name (case-insensitive)
+      const existingMovement = await Movement.findOne({
+        userId: new mongoose.Types.ObjectId(ctx.userId),
+        name: { $regex: new RegExp(`^${input.name.trim()}$`, 'i') }
+      });
+
+      if (existingMovement) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'A movement with this name already exists'
+        });
+      }
+
       const movement = await Movement.create({
         userId: new mongoose.Types.ObjectId(ctx.userId),
         ...input,
@@ -59,7 +68,7 @@ export const movementsRouter = router({
         filter['muscleGroups.main'] = input.muscleGroupMain; // Updated for array
       }
 
-      const movements = await Movement.find(filter).sort({ name: 1 }).lean();
+      const movements = await Movement.find(filter).sort({ updatedAt: -1 }).lean();
       return movements.map((movement) => ({
         ...movement,
         _id: movement._id.toString(),
@@ -102,10 +111,6 @@ export const movementsRouter = router({
           )
           .min(1, 'At least one muscle group is required')
           .optional(),
-        youtubeLink: z.union([
-          z.string().url('Must be a valid URL'),
-          z.literal('')
-        ]).optional(),
         image: z.union([
           z.string().url('Must be a valid URL'),
           z.literal('')
@@ -115,6 +120,22 @@ export const movementsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input;
+
+      // If name is being updated, check for duplicates
+      if (updates.name) {
+        const existingMovement = await Movement.findOne({
+          userId: new mongoose.Types.ObjectId(ctx.userId),
+          name: { $regex: new RegExp(`^${updates.name.trim()}$`, 'i') },
+          _id: { $ne: new mongoose.Types.ObjectId(id) }  // Exclude current movement
+        });
+
+        if (existingMovement) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'A movement with this name already exists'
+          });
+        }
+      }
 
       const movement = await Movement.findOneAndUpdate(
         {

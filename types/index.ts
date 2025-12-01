@@ -26,7 +26,6 @@ export interface IMovement {
   userId: any;
   name: string;
   muscleGroups: IMuscleGroup[];
-  youtubeLink?: string;
   image?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -95,7 +94,6 @@ export interface MovementFormData {
     category: string | null;  // NEW - Second level
     specific: string | null;  // NEW - Third level
   }>;
-  youtubeLink?: string;
   image?: string;
 }
 

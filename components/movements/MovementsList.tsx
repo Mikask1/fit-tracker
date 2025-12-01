@@ -24,7 +24,6 @@ interface Movement {
     specific: string | null;
     sub: string | null; // DEPRECATED - backward compat
   }>;
-  youtubeLink?: string;
   image?: string;
   note?: string;
 }
