@@ -16,7 +16,9 @@ export interface IUser {
 
 export interface IMuscleGroup {
   main: string;
-  sub: string | null;
+  category: string | null;  // NEW - Second level
+  specific: string | null;  // NEW - Third level
+  sub: string | null;       // DEPRECATED - Keep for backward compatibility
 }
 
 export interface IMovement {
@@ -90,7 +92,8 @@ export interface MovementFormData {
   name: string;
   muscleGroups: Array<{
     main: string;
-    sub: string | null; // null = all sub-groups
+    category: string | null;  // NEW - Second level
+    specific: string | null;  // NEW - Third level
   }>;
   youtubeLink?: string;
   image?: string;

@@ -1,13 +1,16 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Ellipsis } from 'lucide-react';
+import { normalizeMuscleGroup } from '@/lib/constants/muscleGroups';
 
 interface Movement {
   _id: string;
   name: string;
   muscleGroups: Array<{
     main: string;
-    sub: string | null; // null = all sub-groups
+    category: string | null;
+    specific: string | null;
+    sub: string | null; // DEPRECATED
   }>;
   youtubeLink?: string;
   image?: string;
@@ -28,13 +31,26 @@ export function MovementCard({ movement, onEdit }: MovementCardProps) {
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-start justify-between gap-4">{movement.name} <Ellipsis className='rotate-90'/></CardTitle>
         <div className="flex flex-wrap gap-2 mt-2">
-          {movement.muscleGroups.map((mg, index) => (
-            <div key={index} className="flex gap-1">
-              {mg.sub ? (
-                <Badge variant="outline">{mg.sub}</Badge>
-              ) : <Badge variant="secondary">{mg.main}</Badge>}
-            </div>
-          ))}
+          {movement.muscleGroups.map((mg, index) => {
+            const normalized = normalizeMuscleGroup(mg);
+            // Show most specific level available: specific > category > main
+            const display = normalized.specific || normalized.category || normalized.main;
+            // Build full path for tooltip
+            const fullPath = [normalized.main, normalized.category, normalized.specific]
+              .filter(Boolean)
+              .join(' → ');
+
+            return (
+              <div key={index} className="flex gap-1">
+                <Badge
+                  variant={normalized.specific || normalized.category ? "outline" : "secondary"}
+                  title={fullPath}
+                >
+                  {display}
+                </Badge>
+              </div>
+            );
+          })}
         </div>
         {movement.note && (
           <p className="text-sm text-muted-foreground mt-3 italic">

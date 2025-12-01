@@ -11,7 +11,8 @@ export interface DateRange {
 }
 
 export interface MuscleDistribution {
-  muscleGroup: string;
+  muscleGroup: string;  // Category name (e.g., "Upper Back")
+  mainGroup: string;    // Main group for color mapping (e.g., "Back")
   volume: number;
 }
 

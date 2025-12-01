@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,8 +14,27 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ErrorState } from '@/components/shared/ErrorState';
 import { ExerciseLogCard } from '@/components/calendar/ExerciseLogCard';
-import { ArrowLeft } from 'lucide-react';
+import { AddMovementDrawer } from '@/components/calendar/AddMovementDrawer';
+import { ArrowLeft, Plus, GripVertical, AlarmClock, Ellipsis, EllipsisVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const loggingSchema = z.object({
   logs: z.array(z.object({
@@ -34,11 +53,91 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+// Sortable wrapper for ExerciseLogCard
+function SortableExerciseLogCard({
+  log,
+  index,
+  exerciseDetails,
+  onAddSet,
+  onRemoveSet,
+  onUpdateSet,
+  onRemove,
+  canRemove,
+}: {
+  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number }> };
+  index: number;
+  exerciseDetails?: { targetSets: number; targetReps: number };
+  onAddSet: (index: number) => void;
+  onRemoveSet: (index: number, setIndex: number) => void;
+  onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
+  onRemove?: (index: number) => void;
+  canRemove?: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: index });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {/* Drag Handle */}
+      <button
+        type="button"
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-2 touch-none cursor-grab active:cursor-grabbing flex items-center justify-center text-muted-foreground hover:text-foreground z-10"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-5 w-5" />
+      </button>
+
+      <ExerciseLogCard
+        log={log}
+        index={index}
+        exerciseDetails={exerciseDetails}
+        onAddSet={onAddSet}
+        onRemoveSet={onRemoveSet}
+        onUpdateSet={onUpdateSet}
+        onRemove={onRemove}
+        canRemove={canRemove}
+      />
+    </div>
+  );
+}
+
 export default function SessionLoggingPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
   const utils = trpc.useUtils();
   const { getDraft, saveDraft, clearDraft } = useSessionDraftStore();
+  const [addMovementDrawerOpen, setAddMovementDrawerOpen] = useState(false);
+
+  // Drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 500,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Fetch session data
   const { data: session, isLoading: sessionLoading, error: sessionError } = trpc.sessions.getById.useQuery(
@@ -72,7 +171,10 @@ export default function SessionLoggingPage({ params }: PageProps) {
   // Update mutation
   const updateMutation = trpc.sessions.update.useMutation({
     onSuccess: async () => {
+      // Invalidate marks the query as stale
       await utils.sessions.listByDateRange.invalidate();
+      // Explicitly refetch to ensure fresh data before navigation
+      await utils.sessions.listByDateRange.refetch();
       toast.success('Workout logged successfully!');
       router.push('/calendar');
     },
@@ -97,7 +199,6 @@ export default function SessionLoggingPage({ params }: PageProps) {
     if (draftIsNewer) {
       // Draft is more recent than server data - restore it
       form.reset({ logs: draft.logs });
-      toast.info('Restored your unsaved changes', { duration: 2000 });
     } else {
       // Clear stale draft if exists
       if (draft) {
@@ -257,6 +358,62 @@ export default function SessionLoggingPage({ params }: PageProps) {
     form.setValue('logs', updatedLogs);
   };
 
+  const addMovement = async (movementId: string, movementName: string) => {
+    const currentLogs = form.getValues('logs');
+
+    // Fetch last completed data for progressive overload
+    const lastCompleted = await utils.sessions.getLastCompletedForMovement.fetch({ movementId });
+
+    // Get exercise details from routine (if exists)
+    const exerciseDetails = getExerciseDetails(movementId);
+
+    // Pre-fill sets based on last workout or defaults
+    const sets = Array.from(
+      { length: exerciseDetails?.targetSets || 3 },
+      (_, i) => ({
+        weight: lastCompleted?.log?.sets?.[i]?.weight || exerciseDetails?.targetWeight || 0,
+        reps: exerciseDetails?.targetReps || 10,
+      })
+    );
+
+    // Add new log entry
+    const newLog = {
+      movementId,
+      movementName,
+      sets,
+    };
+
+    form.setValue('logs', [...currentLogs, newLog]);
+    toast.success(`Added ${movementName}`);
+  };
+
+  const removeMovement = (logIndex: number) => {
+    const currentLogs = form.getValues('logs');
+    const removed = currentLogs[logIndex];
+    const updatedLogs = currentLogs.filter((_, i) => i !== logIndex);
+    form.setValue('logs', updatedLogs);
+    toast.success(`Removed ${removed.movementName}`);
+  };
+
+  const handleDragStart = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(100);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const currentLogs = form.getValues('logs');
+      const oldIndex = active.id as number;
+      const newIndex = over.id as number;
+
+      const reordered = arrayMove(currentLogs, oldIndex, newIndex);
+      form.setValue('logs', reordered);
+    }
+  };
+
   if (sessionLoading) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -299,24 +456,61 @@ export default function SessionLoggingPage({ params }: PageProps) {
                 {format(new Date(session.date), 'EEEE, MMMM d, yyyy')}
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/timer')}
+              className="h-9 w-9"
+              title="Timer/Stopwatch"
+            >
+              <AlarmClock className="h-6 w-6" />
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Body - Scrollable exercise list */}
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6 pb-32 space-y-4">
-          {exerciseLogs.map(({ log, index, exerciseDetails }) => (
-            <ExerciseLogCard
-              key={index}
-              log={log}
-              index={index}
-              exerciseDetails={exerciseDetails}
-              onAddSet={addSet}
-              onRemoveSet={removeSet}
-              onUpdateSet={updateSet}
-            />
-          ))}
+        <div className="container mx-auto px-4 py-6 space-y-4">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={logs.map((_, idx) => idx)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-4 pl-8">
+                {exerciseLogs.map(({ log, index, exerciseDetails }) => (
+                  <SortableExerciseLogCard
+                    key={index}
+                    log={log}
+                    index={index}
+                    exerciseDetails={exerciseDetails}
+                    onAddSet={addSet}
+                    onRemoveSet={removeSet}
+                    onUpdateSet={updateSet}
+                    onRemove={removeMovement}
+                    canRemove={logs.length > 1}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+          <div className='flex flex-col items-center gap-2'>
+            <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setAddMovementDrawerOpen(true)}
+              className="min-h-11"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Movement
+            </Button>
+          </div>
         </div>
       </ScrollArea>
 
@@ -326,14 +520,28 @@ export default function SessionLoggingPage({ params }: PageProps) {
           <div className="flex flex-col gap-2">
             <Button
               onClick={form.handleSubmit(handleCompleteWorkout)}
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || logs.length === 0}
               className="w-full min-h-11"
             >
-              {updateMutation.isPending ? 'Saving...' : 'Complete Workout'}
+              {updateMutation.isPending ? 'Saving' : 'Complete Workout'}
             </Button>
+
+            {logs.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center">
+                Add at least one exercise to complete workout
+              </p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Add Movement Drawer */}
+      <AddMovementDrawer
+        open={addMovementDrawerOpen}
+        onOpenChange={setAddMovementDrawerOpen}
+        onAddMovement={addMovement}
+        excludeMovementIds={logs.map(l => l.movementId)}
+      />
     </div>
   );
 }

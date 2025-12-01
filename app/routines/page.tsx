@@ -72,6 +72,7 @@ export default function RoutinesPage() {
           movementId: typeof ex.movementId === 'object' ? ex.movementId._id.toString() : ex.movementId.toString(),
           targetSets: ex.targetSets,
           targetReps: ex.targetReps,
+          targetWeight: ex.targetWeight || 0,
           order: ex.order,
         })),
       });

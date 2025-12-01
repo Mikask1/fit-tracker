@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import {
-  MUSCLE_GROUPS,
-  MAIN_MUSCLE_GROUPS,
+  MUSCLE_HIERARCHY,
   MainMuscleGroup,
-  SubMuscleGroup,
+  getCategories,
+  getSpecificMuscles,
   MuscleGroupSelection,
 } from '@/lib/constants/muscleGroups';
 
@@ -20,26 +20,39 @@ export function MuscleGroupSelector({
   value,
   onChange,
 }: MuscleGroupSelectorProps) {
-  // Internal state: Map<mainGroup, Set<subGroup>>
-  const [selections, setSelections] = useState<Map<string, Set<string>>>(
-    new Map()
-  );
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // State: Map<mainGroup, Map<category, Set<specific>>>
+  const [selections, setSelections] = useState<Map<string, Map<string, Set<string>>>>(new Map());
+  const [expandedMain, setExpandedMain] = useState<Set<string>>(new Set());
+  const [expandedCategory, setExpandedCategory] = useState<Set<string>>(new Set());
 
   // Initialize from value prop
   useEffect(() => {
-    const newSelections = new Map<string, Set<string>>();
+    const newSelections = new Map<string, Map<string, Set<string>>>();
 
-    value.forEach(({ main, sub }) => {
-      if (sub === null) {
-        // null = all subs
-        newSelections.set(main, new Set(MUSCLE_GROUPS[main]));
+    value.forEach(({ main, category, specific }) => {
+      if (!newSelections.has(main)) {
+        newSelections.set(main, new Map());
+      }
+
+      const mainMap = newSelections.get(main)!;
+
+      if (category === null) {
+        // All categories selected
+        const categories = getCategories(main as MainMuscleGroup);
+        categories.forEach((cat) => {
+          const specifics = getSpecificMuscles(main as MainMuscleGroup, cat);
+          mainMap.set(cat, new Set(specifics));
+        });
+      } else if (specific === null) {
+        // All specifics in category selected
+        const specifics = getSpecificMuscles(main as MainMuscleGroup, category);
+        mainMap.set(category, new Set(specifics));
       } else {
-        // Specific sub
-        if (!newSelections.has(main)) {
-          newSelections.set(main, new Set());
+        // Specific muscle selected
+        if (!mainMap.has(category)) {
+          mainMap.set(category, new Set());
         }
-        newSelections.get(main)!.add(sub);
+        mainMap.get(category)!.add(specific);
       }
     });
 
@@ -48,23 +61,36 @@ export function MuscleGroupSelector({
 
   // Convert internal state to output format
   const toFormData = (
-    newSelections: Map<string, Set<string>>
+    newSelections: Map<string, Map<string, Set<string>>>
   ): MuscleGroupSelection[] => {
     const result: MuscleGroupSelection[] = [];
 
-    newSelections.forEach((subs, main) => {
-      const allSubs = MUSCLE_GROUPS[main as MainMuscleGroup];
+    newSelections.forEach((categoryMap, main) => {
+      const allCategories = getCategories(main as MainMuscleGroup);
 
-      if (subs.size === allSubs.length) {
-        // All subs selected → use null
-        result.push({ main: main as MainMuscleGroup, sub: null });
+      // Check if ALL categories are fully selected (select main)
+      const allCategoriesSelected = allCategories.every((cat) => {
+        const specifics = getSpecificMuscles(main as MainMuscleGroup, cat);
+        const selected = categoryMap.get(cat);
+        return selected && selected.size === specifics.length;
+      });
+
+      if (allCategoriesSelected && allCategories.length > 0) {
+        result.push({ main, category: null, specific: null });
       } else {
-        // Specific subs → create entry for each
-        subs.forEach((sub) => {
-          result.push({
-            main: main as MainMuscleGroup,
-            sub: sub as SubMuscleGroup,
-          });
+        // Some categories selected
+        categoryMap.forEach((specificsSet, category) => {
+          const allSpecifics = getSpecificMuscles(main as MainMuscleGroup, category);
+
+          if (specificsSet.size === allSpecifics.length) {
+            // All specifics in category selected
+            result.push({ main, category, specific: null });
+          } else {
+            // Some specifics selected
+            specificsSet.forEach((specific) => {
+              result.push({ main, category, specific });
+            });
+          }
         });
       }
     });
@@ -72,38 +98,78 @@ export function MuscleGroupSelector({
     return result;
   };
 
-  // Toggle all sub-groups for a main group
-  const handleMainGroupToggle = (mainGroup: MainMuscleGroup) => {
+  // Toggle handlers
+  const handleMainToggle = (main: MainMuscleGroup) => {
     const newSelections = new Map(selections);
-    const subs = MUSCLE_GROUPS[mainGroup];
-    const currentSubs = newSelections.get(mainGroup) || new Set();
+    const categories = getCategories(main);
+    const mainMap = newSelections.get(main) || new Map();
 
-    if (currentSubs.size === subs.length) {
-      // All selected → deselect all
-      newSelections.delete(mainGroup);
+    const allSelected = categories.every((cat) => {
+      const specifics = getSpecificMuscles(main, cat);
+      const selected = mainMap.get(cat);
+      return selected && selected.size === specifics.length;
+    });
+
+    if (allSelected) {
+      // Deselect all
+      newSelections.delete(main);
     } else {
-      // Not all selected → select all
-      newSelections.set(mainGroup, new Set(subs));
+      // Select all
+      const newMainMap = new Map<string, Set<string>>();
+      categories.forEach((cat) => {
+        const specifics = getSpecificMuscles(main, cat);
+        newMainMap.set(cat, new Set(specifics));
+      });
+      newSelections.set(main, newMainMap);
     }
 
     setSelections(newSelections);
     onChange(toFormData(newSelections));
   };
 
-  // Toggle individual sub-group
-  const handleSubToggle = (mainGroup: MainMuscleGroup, sub: string) => {
+  const handleCategoryToggle = (main: MainMuscleGroup, category: string) => {
     const newSelections = new Map(selections);
-
-    if (!newSelections.has(mainGroup)) {
-      newSelections.set(mainGroup, new Set());
+    if (!newSelections.has(main)) {
+      newSelections.set(main, new Map());
     }
 
-    const subs = newSelections.get(mainGroup)!;
-    if (subs.has(sub)) {
-      subs.delete(sub);
-      if (subs.size === 0) newSelections.delete(mainGroup);
+    const mainMap = newSelections.get(main)!;
+    const specifics = getSpecificMuscles(main, category);
+    const selected = mainMap.get(category) || new Set();
+
+    if (selected.size === specifics.length) {
+      // Deselect all
+      mainMap.delete(category);
+      if (mainMap.size === 0) newSelections.delete(main);
     } else {
-      subs.add(sub);
+      // Select all
+      mainMap.set(category, new Set(specifics));
+    }
+
+    setSelections(newSelections);
+    onChange(toFormData(newSelections));
+  };
+
+  const handleSpecificToggle = (main: MainMuscleGroup, category: string, specific: string) => {
+    const newSelections = new Map(selections);
+    if (!newSelections.has(main)) {
+      newSelections.set(main, new Map());
+    }
+
+    const mainMap = newSelections.get(main)!;
+    if (!mainMap.has(category)) {
+      mainMap.set(category, new Set());
+    }
+
+    const specificsSet = mainMap.get(category)!;
+    if (specificsSet.has(specific)) {
+      specificsSet.delete(specific);
+      if (specificsSet.size === 0) {
+        mainMap.delete(category);
+        if (mainMap.size === 0) newSelections.delete(main);
+      }
+    } else {
+      specificsSet.add(specific);
     }
 
     setSelections(newSelections);
@@ -111,34 +177,51 @@ export function MuscleGroupSelector({
   };
 
   // Toggle expansion
-  const toggleExpand = (mainGroup: string) => {
-    const newExpanded = new Set(expanded);
-    if (newExpanded.has(mainGroup)) {
-      newExpanded.delete(mainGroup);
+  const toggleExpandMain = (main: string) => {
+    const newExpanded = new Set(expandedMain);
+    if (newExpanded.has(main)) {
+      newExpanded.delete(main);
     } else {
-      newExpanded.add(mainGroup);
+      newExpanded.add(main);
     }
-    setExpanded(newExpanded);
+    setExpandedMain(newExpanded);
+  };
+
+  const toggleExpandCategory = (key: string) => {
+    const newExpanded = new Set(expandedCategory);
+    if (newExpanded.has(key)) {
+      newExpanded.delete(key);
+    } else {
+      newExpanded.add(key);
+    }
+    setExpandedCategory(newExpanded);
   };
 
   return (
     <div className="space-y-3">
-      {MAIN_MUSCLE_GROUPS.map((mainGroup) => {
-        const subs = MUSCLE_GROUPS[mainGroup];
-        const selected = selections.get(mainGroup) || new Set();
-        const allSelected = selected.size === subs.length && selected.size > 0;
-        const someSelected = selected.size > 0 && selected.size < subs.length;
-        const isExpanded = expanded.has(mainGroup);
+      {(Object.keys(MUSCLE_HIERARCHY) as MainMuscleGroup[]).map((main) => {
+        const categories = getCategories(main);
+        const mainMap = selections.get(main) || new Map();
+
+        // Calculate selection state for main group
+        const totalSpecifics = categories.reduce((sum, cat) => {
+          return sum + getSpecificMuscles(main, cat).length;
+        }, 0);
+        const selectedSpecifics = Array.from(mainMap.values()).reduce((sum, set) => {
+          return sum + set.size;
+        }, 0);
+        const allSelected = selectedSpecifics === totalSpecifics && totalSpecifics > 0;
+        const someSelected = selectedSpecifics > 0 && selectedSpecifics < totalSpecifics;
+        const isExpandedMain = expandedMain.has(main);
 
         return (
-          <div key={mainGroup} className="space-y-2">
-            {/* Parent Checkbox */}
+          <div key={main} className="space-y-2">
+            {/* Main Group Checkbox */}
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={allSelected}
                 ref={(el) => {
                   if (el) {
-                    // Set indeterminate state
                     const checkbox = el as HTMLButtonElement;
                     checkbox.dataset.state = someSelected
                       ? 'indeterminate'
@@ -147,41 +230,97 @@ export function MuscleGroupSelector({
                         : 'unchecked';
                   }
                 }}
-                onCheckedChange={() => handleMainGroupToggle(mainGroup)}
+                onCheckedChange={() => handleMainToggle(main)}
                 className="h-5 w-5"
               />
               <button
                 type="button"
-                onClick={() => toggleExpand(mainGroup)}
+                onClick={() => toggleExpandMain(main)}
                 className="flex items-center gap-1 text-sm font-medium hover:underline min-h-11"
               >
-                {isExpanded ? (
+                {isExpandedMain ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
-                {mainGroup}
-                {selected.size > 0 && (
+                {main}
+                {selectedSpecifics > 0 && (
                   <span className="text-muted-foreground text-xs ml-1">
-                    ({selected.size === subs.length ? 'All' : selected.size})
+                    ({selectedSpecifics === totalSpecifics ? 'All' : selectedSpecifics})
                   </span>
                 )}
               </button>
             </div>
 
-            {/* Child Checkboxes */}
-            {isExpanded && (
+            {/* Categories */}
+            {isExpandedMain && (
               <div className="pl-8 space-y-2">
-                {subs.map((sub) => (
-                  <div key={sub} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={selected.has(sub)}
-                      onCheckedChange={() => handleSubToggle(mainGroup, sub)}
-                      className="h-5 w-5"
-                    />
-                    <label className="text-sm">{sub}</label>
-                  </div>
-                ))}
+                {categories.map((category) => {
+                  const specifics = getSpecificMuscles(main, category);
+                  const selected = mainMap.get(category) || new Set();
+                  const categoryAllSelected = selected.size === specifics.length && specifics.length > 0;
+                  const categorySomeSelected = selected.size > 0 && selected.size < specifics.length;
+                  const categoryKey = `${main}-${category}`;
+                  const isExpandedCategory = expandedCategory.has(categoryKey);
+
+                  return (
+                    <div key={category} className="space-y-2">
+                      {/* Category Checkbox */}
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={categoryAllSelected}
+                          ref={(el) => {
+                            if (el) {
+                              const checkbox = el as HTMLButtonElement;
+                              checkbox.dataset.state = categorySomeSelected
+                                ? 'indeterminate'
+                                : categoryAllSelected
+                                  ? 'checked'
+                                  : 'unchecked';
+                            }
+                          }}
+                          onCheckedChange={() => handleCategoryToggle(main, category)}
+                          className="h-4 w-4"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandCategory(categoryKey)}
+                          className="flex items-center gap-1 text-xs hover:underline"
+                        >
+                          {isExpandedCategory ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                          {category}
+                          {selected.size > 0 && (
+                            <span className="text-muted-foreground text-xs ml-1">
+                              ({selected.size === specifics.length ? 'All' : selected.size})
+                            </span>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Specific Muscles */}
+                      {isExpandedCategory && (
+                        <div className="pl-6 space-y-1">
+                          {specifics.map((specific) => (
+                            <div key={specific} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selected.has(specific)}
+                                onCheckedChange={() => handleSpecificToggle(main, category, specific)}
+                                className="h-3 w-3"
+                              />
+                              <label className="text-xs cursor-pointer" onClick={() => handleSpecificToggle(main, category, specific)}>
+                                {specific}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -128,9 +128,6 @@ export function ExerciseEditDialog({
                   onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
                   className="h-11"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use 0 for bodyweight exercises
-                </p>
               </div>
             </div>
           </div>

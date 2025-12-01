@@ -48,17 +48,25 @@ export const analyticsRouter = router({
             },
           },
         },
-        // Group by main muscle group
+        // Group by category (or main if category is null for backward compat)
         {
           $group: {
-            _id: '$movement.muscleGroups.main',
+            _id: {
+              main: '$movement.muscleGroups.main',
+              category: {
+                $ifNull: ['$movement.muscleGroups.category', '$movement.muscleGroups.sub']
+              },
+            },
             totalVolume: { $sum: '$volume' },
           },
         },
-        // Project final shape
+        // Project final shape with category name only
         {
           $project: {
-            muscleGroup: '$_id',
+            muscleGroup: {
+              $ifNull: ['$_id.category', '$_id.main']
+            },
+            mainGroup: '$_id.main',
             volume: '$totalVolume',
             _id: 0,
           },

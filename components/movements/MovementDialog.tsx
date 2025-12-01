@@ -34,15 +34,10 @@ const movementSchema = z.object({
   muscleGroups: z
     .array(
       z.object({
-        main: z.enum(['Core', 'Cardio', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms']),
-        sub: z.enum([
-          'Core', 'Cardio',
-          'Upper Chest', 'Middle Chest', 'Lower Chest',
-          'Traps', 'Rhomboids', 'Spinal Erectors', 'Lats',
-          'Upper Glutes', 'Middle Glutes', 'Lower Glutes', 'Quads', 'Hamstring', 'Calves',
-          'Front Delt', 'Side Delt', 'Rear Delt',
-          'Bicep', 'Tricep', 'Forearm'
-        ]).nullable(),
+        main: z.string().min(1),
+        category: z.string().nullable(),
+        specific: z.string().nullable(),
+        sub: z.string().nullable().optional(), // backward compat
       })
     )
     .min(1, 'At least one muscle group is required'),

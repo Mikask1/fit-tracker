@@ -63,7 +63,8 @@ export function MuscleDistributionChart({
 
   // Transform data for Recharts
   const chartData = data.map((item) => ({
-    name: item.muscleGroup,
+    name: item.muscleGroup,       // Category name only (e.g., "Upper Back")
+    mainGroup: item.mainGroup,    // For color mapping (e.g., "Back")
     value: item.volume,
     percentage: ((item.volume / totalVolume) * 100).toFixed(1),
   }));
@@ -106,7 +107,7 @@ export function MuscleDistributionChart({
           {chartData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={MUSCLE_COLORS[entry.name] || '#6b7280'}
+              fill={MUSCLE_COLORS[entry.mainGroup] || '#6b7280'}
             />
           ))}
         </Pie>

@@ -1,8 +1,11 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { normalizeMuscleGroup as clientNormalize } from '../constants/muscleGroups';
 
 export interface IMuscleGroup {
   main: string;
-  sub: string | null; // null = all sub-groups
+  category: string | null; // NEW - Second level
+  specific: string | null;  // NEW - Third level
+  sub: string | null;       // DEPRECATED - Keep for backward compatibility
 }
 
 export interface IMovement extends Document {
@@ -24,9 +27,21 @@ const muscleGroupSchema = new Schema<IMuscleGroup>(
       required: [true, 'Main muscle group is required'],
       trim: true,
     },
+    category: {
+      type: String,
+      required: false,
+      trim: true,
+      default: null,
+    },
+    specific: {
+      type: String,
+      required: false,
+      trim: true,
+      default: null,
+    },
     sub: {
       type: String,
-      required: false, // Allow null for "all sub-groups"
+      required: false, // DEPRECATED - backward compat
       trim: true,
       default: null,
     },
@@ -87,5 +102,8 @@ movementSchema.index({ userId: 1, 'muscleGroups.main': 1 }); // Updated for arra
 
 const Movement: Model<IMovement> =
   mongoose.models.Movement || mongoose.model<IMovement>('Movement', movementSchema);
+
+// Export the client-safe normalization helper (re-exported for server use)
+export const normalizeMuscleGroup = clientNormalize;
 
 export default Movement;

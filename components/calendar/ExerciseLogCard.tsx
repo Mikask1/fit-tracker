@@ -1,12 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface ExerciseLogCardProps {
   log: {
@@ -22,6 +24,8 @@ interface ExerciseLogCardProps {
   onAddSet: (index: number) => void;
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
+  onRemove?: (index: number) => void;
+  canRemove?: boolean;
 }
 
 export function ExerciseLogCard({
@@ -31,17 +35,28 @@ export function ExerciseLogCard({
   onAddSet,
   onRemoveSet,
   onUpdateSet,
+  onRemove,
+  canRemove = true,
 }: ExerciseLogCardProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   // Fetch last completed session for this movement (progressive overload)
   const { data: lastCompleted } = trpc.sessions.getLastCompletedForMovement.useQuery(
     { movementId: log.movementId },
     { enabled: !!log.movementId }
   );
 
+  const handleDelete = () => {
+    if (onRemove) {
+      onRemove(index);
+    }
+  };
+
   return (
-    <div
-      className="border rounded-lg p-4 space-y-3 bg-card"
-    >
+    <>
+      <div
+        className="border rounded-lg p-4 space-y-3 bg-card"
+      >
       {/* Exercise Header */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -65,15 +80,20 @@ export function ExerciseLogCard({
             </p>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onAddSet(index)}
-          className="h-9 w-9 p-0"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-1">
+          {canRemove && onRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+              title='Delete Movement'
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Sets */}
@@ -136,7 +156,31 @@ export function ExerciseLogCard({
             </Button>
           </div>
         ))}
+        <div className='flex justify-end'>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onAddSet(index)}
+            className="px-2 h-9 gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Set</span>
+          </Button>
+        </div>
       </div>
-    </div>
+      </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDelete}
+        title="Remove Exercise"
+        description={`Are you sure you want to remove "${log.movementName}" from this workout? You can always add it back later.`}
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="destructive"
+      />
+    </>
   );
 }

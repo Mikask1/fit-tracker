@@ -13,7 +13,9 @@ export const movementsRouter = router({
           .array(
             z.object({
               main: z.string().min(1),
-              sub: z.string().nullable(), // null = all sub-groups
+              category: z.string().nullable().optional(),  // NEW - Second level
+              specific: z.string().nullable().optional(),  // NEW - Third level
+              sub: z.string().nullable().optional(),       // DEPRECATED - backward compat
             })
           )
           .min(1, 'At least one muscle group is required'),
@@ -93,7 +95,9 @@ export const movementsRouter = router({
           .array(
             z.object({
               main: z.string().min(1),
-              sub: z.string().nullable(), // null = all sub-groups
+              category: z.string().nullable().optional(),  // NEW - Second level
+              specific: z.string().nullable().optional(),  // NEW - Third level
+              sub: z.string().nullable().optional(),       // DEPRECATED - backward compat
             })
           )
           .min(1, 'At least one muscle group is required')

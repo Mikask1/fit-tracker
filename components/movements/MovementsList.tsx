@@ -20,10 +20,13 @@ interface Movement {
   name: string;
   muscleGroups: Array<{
     main: string;
-    sub: string | null;
+    category: string | null;
+    specific: string | null;
+    sub: string | null; // DEPRECATED - backward compat
   }>;
   youtubeLink?: string;
   image?: string;
+  note?: string;
 }
 
 interface MovementsListProps {

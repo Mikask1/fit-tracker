@@ -89,6 +89,7 @@ export function ExerciseItem({
 
         {/* Edit Button */}
         <Button
+          type="button"
           variant="ghost"
           size="icon"
           onClick={() => onEdit(exercise)}

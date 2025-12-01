@@ -12,7 +12,9 @@
       "Bash(npm run dev:*)",
       "Bash(dir /s /b \"c:\\Users\\Darren\\Desktop\\Projects\\FitTrack\")",
       "Bash(ls:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(cat:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
