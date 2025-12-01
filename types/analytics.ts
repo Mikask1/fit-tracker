@@ -10,9 +10,17 @@ export interface DateRange {
   to: Date;
 }
 
+export type DrillPath = string[];
+
+export interface DrillDownState {
+  path: DrillPath;
+  level: number;  // Derived from path.length (0, 1, 2)
+}
+
 export interface MuscleDistribution {
-  muscleGroup: string;  // Category name (e.g., "Upper Back")
+  name: string;         // Display name at current level
   mainGroup: string;    // Main group for color mapping (e.g., "Back")
+  category?: string;    // For level 3 grouping (e.g., "Biceps")
   volume: number;
 }
 

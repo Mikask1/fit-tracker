@@ -7,6 +7,7 @@ import { DateRangeSelector } from './DateRangeSelector';
 import { ConsistencyMetrics } from './ConsistencyMetrics';
 import { MuscleDistributionChart } from './MuscleDistributionChart';
 import { ProgressiveOverloadChart } from './ProgressiveOverloadChart';
+import { DrillDownBreadcrumb } from './DrillDownBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
@@ -16,6 +17,8 @@ export function AnalyticsSection() {
     from: startOfWeek(new Date()),
     to: endOfWeek(new Date()),
   });
+
+  const [muscleDrillPath, setMuscleDrillPath] = useState<string[]>([]);
 
   const handleRangeChange = (
     option: DateRangeOption,
@@ -27,6 +30,14 @@ export function AnalyticsSection() {
       from: range.from,
       to: range.to,
     });
+  };
+
+  const handleDrillDown = (segment: string) => {
+    setMuscleDrillPath((prev) => [...prev, segment]);
+  };
+
+  const handleNavigateUp = (index: number) => {
+    setMuscleDrillPath((prev) => prev.slice(0, index + 1));
   };
 
   return (
@@ -53,9 +64,15 @@ export function AnalyticsSection() {
         </h3>
         <Card>
           <CardContent className="pt-6">
+            <DrillDownBreadcrumb
+              path={muscleDrillPath}
+              onNavigate={handleNavigateUp}
+            />
             <MuscleDistributionChart
               startDate={dateRange.from}
               endDate={dateRange.to}
+              drillPath={muscleDrillPath}
+              onDrillDown={handleDrillDown}
             />
           </CardContent>
         </Card>

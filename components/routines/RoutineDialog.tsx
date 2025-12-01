@@ -87,7 +87,9 @@ export function RoutineDrawer({
         form.reset({
           name: routineData.name,
           exercises: routineData.exercises.map((ex: any) => ({
-            movementId: typeof ex.movementId === 'object' ? ex.movementId._id : ex.movementId,
+            movementId: typeof ex.movementId === 'object' && ex.movementId !== null
+              ? ex.movementId._id
+              : ex.movementId?.toString() ?? '',
             targetSets: ex.targetSets,
             targetReps: ex.targetReps,
             targetWeight: ex.targetWeight || 0,

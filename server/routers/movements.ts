@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import Movement from '@/lib/models/Movement';
+import Routine from '@/lib/models/Routine';
+import WorkoutSession from '@/lib/models/WorkoutSession';
 import mongoose from 'mongoose';
 
 export const movementsRouter = router({
@@ -157,17 +159,55 @@ export const movementsRouter = router({
       };
     }),
 
+  checkUsage: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const movementId = new mongoose.Types.ObjectId(input.id);
+      const userId = new mongoose.Types.ObjectId(ctx.userId);
+
+      // Count routines using this movement
+      const routineCount = await Routine.countDocuments({
+        userId: userId,
+        'exercises.movementId': movementId,
+      });
+
+      // Count sessions using this movement (for info only - won't be removed)
+      const sessionCount = await WorkoutSession.countDocuments({
+        userId: userId,
+        'logs.movementId': movementId,
+      });
+
+      return {
+        routineCount,
+        sessionCount,
+        hasUsage: routineCount > 0 || sessionCount > 0,
+      };
+    }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const movement = await Movement.findOneAndDelete({
-        _id: new mongoose.Types.ObjectId(input.id),
-        userId: new mongoose.Types.ObjectId(ctx.userId),
+      const movementId = new mongoose.Types.ObjectId(input.id);
+      const userId = new mongoose.Types.ObjectId(ctx.userId);
+
+      // Verify movement exists and belongs to user
+      const movement = await Movement.findOne({
+        _id: movementId,
+        userId: userId,
       });
 
       if (!movement) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Movement not found' });
       }
+
+      // Remove movement from all routines
+      await Routine.updateMany(
+        { userId: userId },
+        { $pull: { exercises: { movementId: movementId } } }
+      );
+
+      // Delete the movement
+      await Movement.findByIdAndDelete(movementId);
 
       return { success: true };
     }),

@@ -12,23 +12,25 @@ export const analyticsRouter = router({
       z.object({
         startDate: z.date(),
         endDate: z.date(),
+        drillPath: z.array(z.string()).optional().default([]),
       })
     )
     .query(async ({ ctx, input }) => {
-      const result = await WorkoutSession.aggregate([
+      const { startDate, endDate, drillPath } = input;
+      const level = drillPath.length;
+
+      // Base pipeline stages (common to all levels)
+      const pipeline: any[] = [
         // Match user and date range, only completed sessions
         {
           $match: {
             userId: new mongoose.Types.ObjectId(ctx.userId),
-            date: { $gte: input.startDate, $lte: input.endDate },
+            date: { $gte: startDate, $lte: endDate },
             status: SessionStatus.COMPLETED,
           },
         },
-        // Unwind logs array
         { $unwind: '$logs' },
-        // Unwind sets array
         { $unwind: '$logs.sets' },
-        // Lookup movement details to get muscle groups
         {
           $lookup: {
             from: 'movements',
@@ -38,9 +40,7 @@ export const analyticsRouter = router({
           },
         },
         { $unwind: '$movement' },
-        // Unwind muscle groups array
         { $unwind: '$movement.muscleGroups' },
-        // Calculate volume per set
         {
           $addFields: {
             volume: {
@@ -48,32 +48,108 @@ export const analyticsRouter = router({
             },
           },
         },
-        // Group by category (or main if category is null for backward compat)
-        {
-          $group: {
-            _id: {
-              main: '$movement.muscleGroups.main',
-              category: {
-                $ifNull: ['$movement.muscleGroups.category', '$movement.muscleGroups.sub']
+      ];
+
+      // Add filtering based on drill path
+      if (level > 0) {
+        const matchStage: any = {
+          'movement.muscleGroups.main': drillPath[0],
+        };
+
+        if (level > 1) {
+          matchStage.$or = [
+            { 'movement.muscleGroups.category': drillPath[1] },
+            { 'movement.muscleGroups.sub': drillPath[1] },
+          ];
+        }
+
+        pipeline.push({ $match: matchStage });
+      }
+
+      // Add grouping and projection based on drill level
+      if (level === 0) {
+        // Level 0: Group by main muscle group
+        pipeline.push(
+          {
+            $group: {
+              _id: '$movement.muscleGroups.main',
+              totalVolume: { $sum: '$volume' },
+            },
+          },
+          {
+            $project: {
+              name: '$_id',
+              mainGroup: '$_id',
+              volume: '$totalVolume',
+              _id: 0,
+            },
+          }
+        );
+      } else if (level === 1) {
+        // Level 1: Group by category
+        pipeline.push(
+          {
+            $group: {
+              _id: {
+                main: '$movement.muscleGroups.main',
+                category: {
+                  $ifNull: [
+                    '$movement.muscleGroups.category',
+                    '$movement.muscleGroups.sub',
+                  ],
+                },
               },
+              totalVolume: { $sum: '$volume' },
             },
-            totalVolume: { $sum: '$volume' },
           },
-        },
-        // Project final shape with category name only
-        {
-          $project: {
-            muscleGroup: {
-              $ifNull: ['$_id.category', '$_id.main']
+          {
+            $project: {
+              name: '$_id.category',
+              mainGroup: '$_id.main',
+              volume: '$totalVolume',
+              _id: 0,
             },
-            mainGroup: '$_id.main',
-            volume: '$totalVolume',
-            _id: 0,
+          }
+        );
+      } else {
+        // Level 2: Group by specific muscle
+        pipeline.push(
+          // Filter out null specific values
+          {
+            $match: {
+              'movement.muscleGroups.specific': { $ne: null, $exists: true },
+            },
           },
-        },
-        // Sort by volume descending
-        { $sort: { volume: -1 } },
-      ]);
+          {
+            $group: {
+              _id: {
+                main: '$movement.muscleGroups.main',
+                category: {
+                  $ifNull: [
+                    '$movement.muscleGroups.category',
+                    '$movement.muscleGroups.sub',
+                  ],
+                },
+                specific: '$movement.muscleGroups.specific',
+              },
+              totalVolume: { $sum: '$volume' },
+            },
+          },
+          {
+            $project: {
+              name: '$_id.specific',
+              mainGroup: '$_id.main',
+              category: '$_id.category',
+              volume: '$totalVolume',
+              _id: 0,
+            },
+          }
+        );
+      }
+
+      pipeline.push({ $sort: { volume: -1 } });
+
+      const result = await WorkoutSession.aggregate(pipeline);
 
       return result;
     }),

@@ -93,7 +93,7 @@ function SortableExerciseLogCard({
       {/* Drag Handle */}
       <button
         type="button"
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-2 touch-none cursor-grab active:cursor-grabbing flex items-center justify-center text-muted-foreground hover:text-foreground z-10"
+        className="absolute left-0 top-0 bottom-0 -translate-x-full pr-2 touch-none cursor-grab active:cursor-grabbing flex items-center justify-center text-muted-foreground hover:text-foreground z-10"
         {...attributes}
         {...listeners}
       >
@@ -163,7 +163,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
   // Helper to find exercise details from routine
   const getExerciseDetails = (movementId: string) => {
     return routineExercises.find((ex: any) => {
-      const exMovementId = typeof ex.movementId === 'object' ? ex.movementId._id.toString() : ex.movementId.toString();
+      const exMovementId = typeof ex.movementId === 'object' && ex.movementId !== null
+        ? ex.movementId._id.toString()
+        : ex.movementId?.toString() ?? '';
       return exMovementId === movementId;
     });
   };
@@ -209,7 +211,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
       if (session.logs && session.logs.length > 0) {
         form.reset({
           logs: session.logs.map((log: any) => ({
-            movementId: typeof log.movementId === 'object' ? log.movementId._id.toString() : log.movementId.toString(),
+            movementId: typeof log.movementId === 'object' && log.movementId !== null
+              ? log.movementId._id.toString()
+              : log.movementId?.toString() ?? '',
             movementName: log.movementName,
             sets: log.sets,
           })),
@@ -219,7 +223,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
         const initializeWithLastCompleted = async () => {
           const logsWithPrefill = await Promise.all(
             routine.exercises.map(async (ex: any) => {
-              const movementId = typeof ex.movementId === 'object' ? ex.movementId._id.toString() : ex.movementId.toString();
+              const movementId = typeof ex.movementId === 'object' && ex.movementId !== null
+                ? ex.movementId._id.toString()
+                : ex.movementId?.toString() ?? '';
 
               // Fetch last completed session for this movement
               const lastCompleted = await utils.sessions.getLastCompletedForMovement.fetch({ movementId });
@@ -280,7 +286,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
       try {
         // Build updated exercises array with actual performed values
         const updatedExercises = routine.exercises.map((ex: any) => {
-          const exMovementId = typeof ex.movementId === 'object' ? ex.movementId._id.toString() : ex.movementId.toString();
+          const exMovementId = typeof ex.movementId === 'object' && ex.movementId !== null
+            ? ex.movementId._id.toString()
+            : ex.movementId?.toString() ?? '';
 
           // Find the corresponding log for this exercise
           const log = data.logs.find(l => l.movementId === exMovementId);

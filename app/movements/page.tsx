@@ -18,6 +18,11 @@ export default function MovementsPage() {
   const { data: movements, isLoading } = trpc.movements.list.useQuery();
   const utils = trpc.useUtils();
 
+  const { data: usage } = trpc.movements.checkUsage.useQuery(
+    { id: deletingId! },
+    { enabled: !!deletingId }
+  );
+
   const deleteMutation = trpc.movements.delete.useMutation({
     onSuccess: async () => {
       await utils.movements.list.invalidate();
@@ -100,7 +105,11 @@ export default function MovementsPage() {
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         title="Delete Movement"
-        description="Are you sure you want to delete this movement? This action cannot be undone."
+        description={
+          usage?.routineCount
+            ? `This movement is used in ${usage.routineCount} routine${usage.routineCount > 1 ? 's' : ''} and will be removed from them. ${usage.sessionCount > 0 ? `Historical workout data (${usage.sessionCount} session${usage.sessionCount > 1 ? 's' : ''}) will be preserved. ` : ''}This action cannot be undone.`
+            : 'Are you sure you want to delete this movement? This action cannot be undone.'
+        }
         confirmText="Delete"
         variant="destructive"
       />

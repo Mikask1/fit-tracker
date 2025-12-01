@@ -136,7 +136,9 @@ export function SessionDrawer({
       form.reset({
         routineId: session.sourceRoutineId?.toString(),
         logs: session.logs.map((log: any) => ({
-          movementId: typeof log.movementId === 'object' ? log.movementId._id.toString() : log.movementId.toString(),
+          movementId: typeof log.movementId === 'object' && log.movementId !== null
+            ? log.movementId._id.toString()
+            : log.movementId?.toString() ?? '',
           movementName: log.movementName,
           sets: log.sets,
         })),

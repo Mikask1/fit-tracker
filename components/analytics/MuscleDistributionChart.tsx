@@ -4,6 +4,12 @@ import { trpc } from '@/lib/trpc/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/shared/ErrorState';
 import { formatVolume } from '@/lib/utils/volumeCalculation';
+import { getDrillDownColor } from '@/lib/utils/colorUtils';
+import {
+  MUSCLE_HIERARCHY,
+  getSpecificMuscles,
+  MainMuscleGroup,
+} from '@/lib/constants/muscleGroups';
 import {
   PieChart,
   Pie,
@@ -16,6 +22,8 @@ import {
 interface MuscleDistributionChartProps {
   startDate: Date;
   endDate: Date;
+  drillPath: string[];
+  onDrillDown: (segment: string) => void;
 }
 
 const MUSCLE_COLORS: Record<string, string> = {
@@ -28,14 +36,34 @@ const MUSCLE_COLORS: Record<string, string> = {
   Cardio: '#f43f5e', // rose-500
 };
 
+// Helper function to determine if an item is drillable
+function isDrillable(itemName: string, drillPath: string[]): boolean {
+  const level = drillPath.length;
+
+  if (level === 0) {
+    // Main groups always drillable
+    return true;
+  } else if (level === 1) {
+    // Check if category has specific muscles
+    const mainGroup = drillPath[0] as MainMuscleGroup;
+    const specifics = getSpecificMuscles(mainGroup, itemName);
+    return specifics.length > 0;
+  }
+  // Level 2 (specific muscles) not drillable
+  return false;
+}
+
 export function MuscleDistributionChart({
   startDate,
   endDate,
+  drillPath,
+  onDrillDown,
 }: MuscleDistributionChartProps) {
   const { data, isLoading, error } =
     trpc.analytics.getMuscleDistribution.useQuery({
       startDate,
       endDate,
+      drillPath,
     });
 
   if (isLoading) {
@@ -61,13 +89,36 @@ export function MuscleDistributionChart({
   // Calculate total volume for percentages
   const totalVolume = data.reduce((sum, item) => sum + item.volume, 0);
 
+  // Get all item names for color shade generation
+  const allItemNames = data.map((d) => d.name);
+
   // Transform data for Recharts
-  const chartData = data.map((item) => ({
-    name: item.muscleGroup,       // Category name only (e.g., "Upper Back")
-    mainGroup: item.mainGroup,    // For color mapping (e.g., "Back")
-    value: item.volume,
-    percentage: ((item.volume / totalVolume) * 100).toFixed(1),
-  }));
+  const chartData = data.map((item) => {
+    const color = getDrillDownColor(
+      item.name,
+      item.mainGroup,
+      drillPath,
+      allItemNames,
+      MUSCLE_COLORS
+    );
+    const drillable = isDrillable(item.name, drillPath);
+
+    return {
+      name: item.name,
+      mainGroup: item.mainGroup,
+      value: item.volume,
+      percentage: ((item.volume / totalVolume) * 100).toFixed(1),
+      color,
+      isDrillable: drillable,
+    };
+  });
+
+  // Click handler for pie slices
+  const handleSliceClick = (entry: typeof chartData[0]) => {
+    if (entry.isDrillable) {
+      onDrillDown(entry.name);
+    }
+  };
 
   // Custom label renderer with closer positioning
   const renderCustomLabel = (props: any) => {
@@ -107,7 +158,12 @@ export function MuscleDistributionChart({
           {chartData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={MUSCLE_COLORS[entry.mainGroup] || '#6b7280'}
+              fill={entry.color}
+              onClick={() => handleSliceClick(entry)}
+              cursor={entry.isDrillable ? 'pointer' : 'default'}
+              style={{
+                opacity: entry.isDrillable ? 1 : 0.95,
+              }}
             />
           ))}
         </Pie>

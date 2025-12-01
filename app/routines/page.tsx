@@ -69,7 +69,9 @@ export default function RoutinesPage() {
       await createMutation.mutateAsync({
         name: newName,
         exercises: routineToDuplicate.exercises.map((ex: any) => ({
-          movementId: typeof ex.movementId === 'object' ? ex.movementId._id.toString() : ex.movementId.toString(),
+          movementId: typeof ex.movementId === 'object' && ex.movementId !== null
+            ? ex.movementId._id.toString()
+            : ex.movementId?.toString() ?? '',
           targetSets: ex.targetSets,
           targetReps: ex.targetReps,
           targetWeight: ex.targetWeight || 0,
