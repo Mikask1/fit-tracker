@@ -1,7 +1,13 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
+export interface IAlternativeMovement {
+  movementId: mongoose.Types.ObjectId;
+  order: number;
+}
+
 export interface IExercise {
   movementId: mongoose.Types.ObjectId;
+  alternativeMovements?: IAlternativeMovement[];
   targetSets: number;
   targetReps: number;
   targetWeight: number;
@@ -17,12 +23,38 @@ export interface IRoutine extends Document {
   updatedAt: Date;
 }
 
+const alternativeMovementSchema = new Schema<IAlternativeMovement>(
+  {
+    movementId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Movement',
+      required: true,
+    },
+    order: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: false }
+);
+
 const exerciseSchema = new Schema<IExercise>(
   {
     movementId: {
       type: Schema.Types.ObjectId,
       ref: 'Movement',
       required: true,
+    },
+    alternativeMovements: {
+      type: [alternativeMovementSchema],
+      default: [],
+      validate: {
+        validator: function(v: IAlternativeMovement[]) {
+          return v.length <= 5;
+        },
+        message: 'Cannot have more than 5 alternative movements'
+      }
     },
     targetSets: {
       type: Number,

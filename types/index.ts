@@ -31,8 +31,14 @@ export interface IMovement {
   updatedAt: Date;
 }
 
+export interface IAlternativeMovement {
+  movementId: any;
+  order: number;
+}
+
 export interface IExercise {
   movementId: any;
+  alternativeMovements?: IAlternativeMovement[];
   targetSets: number;
   targetReps: number;
   targetWeight: number;
@@ -101,6 +107,10 @@ export interface RoutineFormData {
   name: string;
   exercises: Array<{
     movementId: string;
+    alternativeMovements?: Array<{
+      movementId: string;
+      order: number;
+    }>;
     targetSets: number;
     targetReps: number;
     targetWeight: number;

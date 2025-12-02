@@ -12,9 +12,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { Trash2 } from 'lucide-react';
-import type { ExerciseFormData } from './RoutineDialog';
+import { AlternativeMovementItem } from './AlternativeMovementItem';
+import { AddAlternativeDrawer } from './AddAlternativeDrawer';
+import { Trash2, Plus } from 'lucide-react';
+import type { ExerciseFormData, AlternativeMovementFormData } from './RoutineDialog';
 
 interface ExerciseEditDialogProps {
   open: boolean;
@@ -34,7 +38,11 @@ export function ExerciseEditDialog({
   const [sets, setSets] = useState(exercise?.targetSets || 3);
   const [reps, setReps] = useState(exercise?.targetReps || 10);
   const [weight, setWeight] = useState(exercise?.targetWeight || 0);
+  const [alternatives, setAlternatives] = useState<AlternativeMovementFormData[]>(
+    exercise?.alternativeMovements || []
+  );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddAlternativeOpen, setIsAddAlternativeOpen] = useState(false);
 
   // Fetch movement data to display name
   const { data: movement } = trpc.movements.getById.useQuery(
@@ -48,6 +56,7 @@ export function ExerciseEditDialog({
       setSets(exercise.targetSets);
       setReps(exercise.targetReps);
       setWeight(exercise.targetWeight);
+      setAlternatives(exercise.alternativeMovements || []);
     }
   }, [exercise]);
 
@@ -57,9 +66,21 @@ export function ExerciseEditDialog({
         targetSets: sets,
         targetReps: reps,
         targetWeight: weight,
+        alternativeMovements: alternatives,
       });
       onOpenChange(false);
     }
+  };
+
+  const handleAddAlternative = (movementId: string) => {
+    const newOrder = alternatives.length > 0
+      ? Math.max(...alternatives.map(a => a.order)) + 1
+      : 0;
+    setAlternatives([...alternatives, { movementId, order: newOrder }]);
+  };
+
+  const handleRemoveAlternative = (index: number) => {
+    setAlternatives(alternatives.filter((_, i) => i !== index));
   };
 
   const handleDelete = () => {
@@ -72,67 +93,118 @@ export function ExerciseEditDialog({
     onOpenChange(false);
   };
 
+  // Get list of movement IDs to exclude from alternative picker
+  const excludeMovementIds = exercise
+    ? [exercise.movementId, ...alternatives.map(a => a.movementId)]
+    : [];
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               Edit Exercise
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Exercise Name */}
-            <div>
-              <p className="font-medium">{movement?.name || 'Loading...'}</p>
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="space-y-4 px-1">
+              {/* Exercise Name */}
+              <div>
+                <p className="font-medium">{movement?.name || 'Loading...'}</p>
+                <p className="text-xs text-muted-foreground">Primary Movement</p>
+              </div>
+
+              {/* Form Inputs */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-sets">Sets</Label>
+                  <Input
+                    id="edit-sets"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={sets}
+                    onChange={(e) => setSets(parseInt(e.target.value) || 1)}
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-reps">Reps</Label>
+                  <Input
+                    id="edit-reps"
+                    type="number"
+                    min={1}
+                    max={999}
+                    value={reps}
+                    onChange={(e) => setReps(parseInt(e.target.value) || 1)}
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-weight">Weight (kg)</Label>
+                  <Input
+                    id="edit-weight"
+                    type="number"
+                    step="0.5"
+                    min={0}
+                    max={9999}
+                    value={weight}
+                    onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
+                    className="h-11"
+                  />
+                </div>
+              </div>
+
+              {/* Alternatives Section */}
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <Label>Alternative Movements</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Options to substitute during workouts
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAddAlternativeOpen(true)}
+                    disabled={alternatives.length >= 5}
+                    className="h-8"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+
+                {alternatives.length === 0 ? (
+                  <div className="border-2 border-dashed rounded-lg p-4 text-center text-muted-foreground text-sm">
+                    No alternatives added
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {alternatives
+                      .sort((a, b) => a.order - b.order)
+                      .map((alt, index) => (
+                        <AlternativeMovementItem
+                          key={`${alt.movementId}-${alt.order}`}
+                          alternative={alt}
+                          index={index}
+                          onRemove={() => handleRemoveAlternative(index)}
+                        />
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
+          </ScrollArea>
 
-            {/* Form Inputs */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-sets">Sets</Label>
-                <Input
-                  id="edit-sets"
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={sets}
-                  onChange={(e) => setSets(parseInt(e.target.value) || 1)}
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-reps">Reps</Label>
-                <Input
-                  id="edit-reps"
-                  type="number"
-                  min={1}
-                  max={999}
-                  value={reps}
-                  onChange={(e) => setReps(parseInt(e.target.value) || 1)}
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-weight">Weight (kg)</Label>
-                <Input
-                  id="edit-weight"
-                  type="number"
-                  step="0.5"
-                  min={0}
-                  max={9999}
-                  value={weight}
-                  onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
-                  className="h-11"
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex-row gap-2">
+          <DialogFooter className="border-t flex-row gap-2">
             <Button
               type="button"
               variant="destructive"
@@ -171,6 +243,14 @@ export function ExerciseEditDialog({
         description="Are you sure you want to remove this exercise from the routine? This action cannot be undone."
         confirmText="Delete"
         variant="destructive"
+      />
+
+      {/* Add Alternative Drawer */}
+      <AddAlternativeDrawer
+        open={isAddAlternativeOpen}
+        onOpenChange={setIsAddAlternativeOpen}
+        onAddAlternative={handleAddAlternative}
+        excludeMovementIds={excludeMovementIds}
       />
     </>
   );

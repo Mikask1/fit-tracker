@@ -6,9 +6,11 @@ import { trpc } from '@/lib/trpc/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Minus, Trash2, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { SwitchMovementDialog } from './SwitchMovementDialog';
 
 interface ExerciseLogCardProps {
   log: {
@@ -20,11 +22,14 @@ interface ExerciseLogCardProps {
   exerciseDetails?: {
     targetSets: number;
     targetReps: number;
+    movementId?: string; // Primary movement ID
+    alternativeMovements?: Array<{ movementId: string; order: number }>;
   };
   onAddSet: (index: number) => void;
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
   onRemove?: (index: number) => void;
+  onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
 }
 
@@ -36,9 +41,11 @@ export function ExerciseLogCard({
   onRemoveSet,
   onUpdateSet,
   onRemove,
+  onSwitchMovement,
   canRemove = true,
 }: ExerciseLogCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSwitchDialog, setShowSwitchDialog] = useState(false);
 
   // Fetch last completed session for this movement (progressive overload)
   const { data: lastCompleted } = trpc.sessions.getLastCompletedForMovement.useQuery(
@@ -52,6 +59,20 @@ export function ExerciseLogCard({
     }
   };
 
+  const handleSwitch = (newMovementId: string, newMovementName: string) => {
+    if (onSwitchMovement) {
+      onSwitchMovement(index, newMovementId, newMovementName);
+    }
+  };
+
+  // Check if this is an alternative movement
+  const isAlternative = exerciseDetails?.movementId &&
+    log.movementId !== exerciseDetails.movementId;
+
+  // Check if alternatives are available
+  const hasAlternatives = exerciseDetails?.alternativeMovements &&
+    exerciseDetails.alternativeMovements.length > 0;
+
   return (
     <>
       <div
@@ -60,7 +81,14 @@ export function ExerciseLogCard({
       {/* Exercise Header */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="font-semibold text-lg">{log.movementName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-lg">{log.movementName}</h3>
+            {isAlternative && (
+              <Badge variant="secondary" className="text-xs">
+                Alternative
+              </Badge>
+            )}
+          </div>
           {exerciseDetails && (
             <p className="text-sm text-muted-foreground mt-0.5">
               Target: {exerciseDetails.targetSets} sets × {exerciseDetails.targetReps} reps
@@ -81,6 +109,19 @@ export function ExerciseLogCard({
           )}
         </div>
         <div className="flex gap-1">
+          {/* Switch Movement Button - Only if alternatives exist */}
+          {hasAlternatives && exerciseDetails?.movementId && onSwitchMovement && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSwitchDialog(true)}
+              className="h-9 w-9 p-0"
+              title="Switch to alternative movement"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+            </Button>
+          )}
           {canRemove && onRemove && (
             <Button
               type="button"
@@ -181,6 +222,18 @@ export function ExerciseLogCard({
         cancelText="Cancel"
         variant="destructive"
       />
+
+      {/* Switch Movement Dialog */}
+      {hasAlternatives && exerciseDetails?.movementId && (
+        <SwitchMovementDialog
+          open={showSwitchDialog}
+          onOpenChange={setShowSwitchDialog}
+          currentMovementId={log.movementId}
+          primaryMovementId={exerciseDetails.movementId}
+          alternatives={exerciseDetails.alternativeMovements || []}
+          onSwitch={handleSwitch}
+        />
+      )}
     </>
   );
 }

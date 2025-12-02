@@ -62,15 +62,22 @@ function SortableExerciseLogCard({
   onRemoveSet,
   onUpdateSet,
   onRemove,
+  onSwitchMovement,
   canRemove,
 }: {
   log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number }> };
   index: number;
-  exerciseDetails?: { targetSets: number; targetReps: number };
+  exerciseDetails?: {
+    targetSets: number;
+    targetReps: number;
+    movementId?: string;
+    alternativeMovements?: Array<{ movementId: string; order: number }>;
+  };
   onAddSet: (index: number) => void;
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
   onRemove?: (index: number) => void;
+  onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
 }) {
   const {
@@ -108,6 +115,7 @@ function SortableExerciseLogCard({
         onRemoveSet={onRemoveSet}
         onUpdateSet={onUpdateSet}
         onRemove={onRemove}
+        onSwitchMovement={onSwitchMovement}
         canRemove={canRemove}
       />
     </div>
@@ -166,7 +174,21 @@ export default function SessionLoggingPage({ params }: PageProps) {
       const exMovementId = typeof ex.movementId === 'object' && ex.movementId !== null
         ? ex.movementId._id.toString()
         : ex.movementId?.toString() ?? '';
-      return exMovementId === movementId;
+
+      // Check if movementId matches primary
+      if (exMovementId === movementId) return true;
+
+      // Check if movementId matches any alternative
+      if (ex.alternativeMovements) {
+        return ex.alternativeMovements.some((alt: any) => {
+          const altMovementId = typeof alt.movementId === 'object' && alt.movementId !== null
+            ? alt.movementId._id.toString()
+            : alt.movementId?.toString() ?? '';
+          return altMovementId === movementId;
+        });
+      }
+
+      return false;
     });
   };
 
@@ -403,6 +425,25 @@ export default function SessionLoggingPage({ params }: PageProps) {
     toast.success(`Removed ${removed.movementName}`);
   };
 
+  const handleSwitchMovement = async (
+    logIndex: number,
+    newMovementId: string,
+    newMovementName: string
+  ) => {
+    const currentLogs = form.getValues('logs');
+    const updatedLogs = [...currentLogs];
+
+    // Update movement, keep existing sets
+    updatedLogs[logIndex] = {
+      ...updatedLogs[logIndex],
+      movementId: newMovementId,
+      movementName: newMovementName,
+    };
+
+    form.setValue('logs', updatedLogs);
+    toast.success(`Switched to ${newMovementName}`);
+  };
+
   const handleDragStart = () => {
     if ('vibrate' in navigator) {
       navigator.vibrate(100);
@@ -440,8 +481,24 @@ export default function SessionLoggingPage({ params }: PageProps) {
 
   // Map exercises for display
   const exerciseLogs = logs.map((log, index) => {
-    const exerciseDetails = getExerciseDetails(log.movementId);
-    return { log, index, exerciseDetails };
+    const exerciseDetails: any = getExerciseDetails(log.movementId);
+
+    // Format exercise details with primary movementId and alternatives
+    const formattedDetails = exerciseDetails ? {
+      targetSets: exerciseDetails.targetSets,
+      targetReps: exerciseDetails.targetReps,
+      movementId: typeof exerciseDetails.movementId === 'object' && exerciseDetails.movementId !== null
+        ? exerciseDetails.movementId._id.toString()
+        : exerciseDetails.movementId?.toString() ?? '',
+      alternativeMovements: exerciseDetails.alternativeMovements?.map((alt: any) => ({
+        movementId: typeof alt.movementId === 'object' && alt.movementId !== null
+          ? alt.movementId._id.toString()
+          : alt.movementId?.toString() ?? '',
+        order: alt.order,
+      })) || [],
+    } : undefined;
+
+    return { log, index, exerciseDetails: formattedDetails };
   });
 
   return (
@@ -501,6 +558,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
                     onRemoveSet={removeSet}
                     onUpdateSet={updateSet}
                     onRemove={removeMovement}
+                    onSwitchMovement={handleSwitchMovement}
                     canRemove={logs.length > 1}
                   />
                 ))}

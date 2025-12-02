@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { GripVertical, Edit } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
 import type { ExerciseFormData } from './RoutineDialog';
@@ -58,9 +59,16 @@ export function ExerciseItem({
         {/* Exercise Content */}
         <div className="flex-1 min-w-0">
           {/* Name */}
-          <h4 className="font-medium line-clamp-1">
-            {movement?.name || 'Loading...'}
-          </h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium line-clamp-1">
+              {movement?.name || 'Loading...'}
+            </h4>
+            {exercise.alternativeMovements && exercise.alternativeMovements.length > 0 && (
+              <Badge variant="secondary" className="text-xs shrink-0">
+                +{exercise.alternativeMovements.length} alt
+              </Badge>
+            )}
+          </div>
 
           {/* Compact Stats */}
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">

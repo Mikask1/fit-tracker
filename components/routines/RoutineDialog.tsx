@@ -29,8 +29,25 @@ import { AddExerciseDrawer } from './AddExerciseDrawer';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 
+const alternativeMovementSchema = z.object({
+  movementId: z.string(),
+  order: z.number().min(0),
+});
+
 const exerciseSchema = z.object({
   movementId: z.string(),
+  alternativeMovements: z.array(alternativeMovementSchema)
+    .max(5, 'Cannot have more than 5 alternative movements')
+    .optional()
+    .default([])
+    .refine(
+      (alternatives) => {
+        if (!alternatives || alternatives.length === 0) return true;
+        const ids = alternatives.map(a => a.movementId);
+        return ids.length === new Set(ids).size;
+      },
+      { message: 'Alternative movements must be unique' }
+    ),
   targetSets: z.number().min(1).max(20),
   targetReps: z.number().min(1).max(999),
   targetWeight: z.number().min(0).max(9999),
@@ -44,6 +61,7 @@ const routineSchema = z.object({
 
 type RoutineFormData = z.infer<typeof routineSchema>;
 export type ExerciseFormData = z.infer<typeof exerciseSchema>;
+export type AlternativeMovementFormData = z.infer<typeof alternativeMovementSchema>;
 
 interface RoutineDrawerProps {
   open: boolean;
@@ -90,6 +108,12 @@ export function RoutineDrawer({
             movementId: typeof ex.movementId === 'object' && ex.movementId !== null
               ? ex.movementId._id
               : ex.movementId?.toString() ?? '',
+            alternativeMovements: ex.alternativeMovements?.map((alt: any) => ({
+              movementId: typeof alt.movementId === 'object' && alt.movementId !== null
+                ? alt.movementId._id
+                : alt.movementId?.toString() ?? '',
+              order: alt.order,
+            })) || [],
             targetSets: ex.targetSets,
             targetReps: ex.targetReps,
             targetWeight: ex.targetWeight || 0,
