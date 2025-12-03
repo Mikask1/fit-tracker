@@ -79,6 +79,7 @@ export function AddExerciseDrawer({
   const handleSelectMovement = (movementId: string) => {
     const newExercise: ExerciseFormData = {
       movementId,
+      alternativeMovements: [],
       targetSets: 3,
       targetReps: 12,
       targetWeight: 0,

@@ -301,11 +301,18 @@ export default function SessionLoggingPage({ params }: PageProps) {
   }, [logs, saveDraft, resolvedParams.id]);
 
   const handleCompleteWorkout = async (data: LoggingFormData) => {
+    // Mark all exercises as completed
+    const completedLogs = data.logs.map(log => ({
+      ...log,
+      isCompleted: true,
+      completedAt: Date.now(),
+    }));
+
     // Update the workout session
     await updateMutation.mutateAsync({
       id: resolvedParams.id,
       status: SessionStatus.COMPLETED,
-      logs: data.logs,
+      logs: completedLogs,
     });
 
     // Clear draft after successful save
