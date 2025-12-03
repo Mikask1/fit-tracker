@@ -28,6 +28,7 @@ import { ExerciseList } from './ExerciseList';
 import { AddExerciseDrawer } from './AddExerciseDrawer';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
+import { isReservedRoutineName } from '@/lib/constants';
 
 const alternativeMovementSchema = z.object({
   movementId: z.string(),
@@ -55,7 +56,12 @@ const exerciseSchema = z.object({
 });
 
 const routineSchema = z.object({
-  name: z.string().min(1, 'Routine name is required'),
+  name: z.string()
+    .min(1, 'Routine name is required')
+    .refine(
+      (name) => !isReservedRoutineName(name),
+      { message: 'This routine name is reserved. Please choose a different name.' }
+    ),
   exercises: z.array(exerciseSchema),
 });
 

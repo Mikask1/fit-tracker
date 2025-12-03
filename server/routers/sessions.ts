@@ -13,6 +13,8 @@ const sessionLogSchema = z.object({
   movementId: z.string(),
   movementName: z.string(), // Snapshot
   sets: z.array(setSchema).default([]),
+  isCompleted: z.boolean().optional(),
+  completedAt: z.number().optional(),
 });
 
 export const sessionsRouter = router({

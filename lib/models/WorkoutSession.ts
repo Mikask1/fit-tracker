@@ -14,6 +14,8 @@ export interface ISessionLog {
   movementId: mongoose.Types.ObjectId;
   movementName: string; // Snapshot for data preservation
   sets: ISet[];
+  isCompleted?: boolean;
+  completedAt?: number;
 }
 
 export interface IWorkoutSession extends Document {
@@ -60,6 +62,15 @@ const sessionLogSchema = new Schema<ISessionLog>(
     sets: {
       type: [setSchema],
       default: [],
+    },
+    isCompleted: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    completedAt: {
+      type: Number,
+      required: false,
     },
   },
   { _id: false }

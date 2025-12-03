@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
+import { CUSTOM_ROUTINE_ID } from '@/lib/constants';
 
 const sessionSchema = z.object({
   routineId: z.string().optional(),
@@ -160,7 +161,9 @@ export function SessionDrawer({
 
     await createMutation.mutateAsync({
       date,
-      sourceRoutineId: data.routineId,
+      sourceRoutineId: data.routineId === CUSTOM_ROUTINE_ID
+        ? undefined
+        : data.routineId,
       status: SessionStatus.PLANNED,
       logs: [],
     });
@@ -257,6 +260,20 @@ export function SessionDrawer({
               <SelectValue placeholder="Choose a routine" />
             </SelectTrigger>
             <SelectContent>
+              {/* Custom Routine Option */}
+              <SelectItem value={CUSTOM_ROUTINE_ID}>
+                <div className="flex items-center gap-2">
+                  <span>Custom Routine</span>
+                  <span className="text-xs text-muted-foreground">(blank workout)</span>
+                </div>
+              </SelectItem>
+
+              {/* Separator if routines exist */}
+              {routines && routines.length > 0 && (
+                <div className="border-t my-1" />
+              )}
+
+              {/* User's routines */}
               {routines?.map((routine: any) => (
                 <SelectItem key={routine._id.toString()} value={routine._id.toString()}>
                   {routine.name}

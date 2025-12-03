@@ -63,6 +63,8 @@ export interface ISessionLog {
   movementId: any;
   movementName: string;
   sets: ISet[];
+  isCompleted?: boolean;
+  completedAt?: number;
 }
 
 export interface IWorkoutSession {

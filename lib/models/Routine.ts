@@ -1,4 +1,5 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
+import { isReservedRoutineName } from '@/lib/constants';
 
 export interface IAlternativeMovement {
   movementId: mongoose.Types.ObjectId;
@@ -95,6 +96,12 @@ const routineSchema = new Schema<IRoutine>(
       type: String,
       required: [true, 'Routine name is required'],
       trim: true,
+      validate: {
+        validator: function(v: string) {
+          return !isReservedRoutineName(v);
+        },
+        message: 'This routine name is reserved'
+      },
     },
     exercises: {
       type: [exerciseSchema],

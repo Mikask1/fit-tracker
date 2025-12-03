@@ -5,6 +5,7 @@ import { Play, Pause, RotateCcw, Plus } from 'lucide-react';
 import { useTimerStore } from '@/store/timerStore';
 import { useStopwatch } from '@/hooks/useStopwatch';
 import { LapsList } from './LapsList';
+import { CurrentLapDisplay } from './CurrentLapDisplay';
 
 // Format milliseconds to MM:SS.CS (centiseconds)
 function formatTime(ms: number): string {
@@ -25,7 +26,7 @@ export function StopwatchTab() {
     recordLap,
   } = useTimerStore();
 
-  const { stopwatchElapsed, stopwatchIsRunning, stopwatchIsPaused, stopwatchLaps } = useStopwatch();
+  const { stopwatchElapsed, stopwatchIsRunning, stopwatchIsPaused, stopwatchLaps, currentLapTime } = useStopwatch();
 
   const handleStart = () => {
     startStopwatch();
@@ -120,11 +121,21 @@ export function StopwatchTab() {
         )}
       </div>
 
-      {/* Laps list */}
-      {stopwatchLaps.length > 0 && (
-        <div className="flex-1 overflow-hidden">
+      {/* Current lap + Laps list */}
+      {(stopwatchIsRunning || stopwatchIsPaused || stopwatchLaps.length > 0) && (
+        <div className="flex-1 overflow-hidden flex flex-col">
           <h3 className="text-lg font-semibold mb-3">Laps</h3>
-          <LapsList laps={stopwatchLaps} />
+
+          {/* Current lap display - show while running or if laps exist */}
+          {(stopwatchIsRunning || stopwatchLaps.length > 0) && (
+            <CurrentLapDisplay
+              currentLapTime={currentLapTime}
+              isRunning={stopwatchIsRunning}
+            />
+          )}
+
+          {/* Recorded laps */}
+          {stopwatchLaps.length > 0 && <LapsList laps={stopwatchLaps} />}
         </div>
       )}
     </div>

@@ -64,10 +64,19 @@ export function useStopwatch() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [stopwatchIsRunning, stopwatchStartTime, updateStopwatchElapsed]);
 
+  const getCurrentLapTime = (): number => {
+    if (stopwatchLaps.length === 0) {
+      return stopwatchElapsed;
+    }
+    const lastLap = stopwatchLaps[stopwatchLaps.length - 1];
+    return stopwatchElapsed - lastLap.totalTime;
+  };
+
   return {
     stopwatchElapsed,
     stopwatchIsRunning,
     stopwatchIsPaused,
     stopwatchLaps,
+    currentLapTime: getCurrentLapTime(),
   };
 }

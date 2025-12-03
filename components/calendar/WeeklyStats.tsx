@@ -28,8 +28,8 @@ export function WeeklyStats() {
   const { data: user } = trpc.auth.me.useQuery();
 
   // Get current week's completed sessions
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
-  const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }); // Sunday
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 }); // Sunday
+  const weekEnd = endOfWeek(new Date(), { weekStartsOn: 0 }); // Saturday
 
   const { data: sessions } = trpc.sessions.listByDateRange.useQuery({
     startDate: weekStart,

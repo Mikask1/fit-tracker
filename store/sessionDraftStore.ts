@@ -10,6 +10,8 @@ export interface LogEntry {
   movementId: string;
   movementName: string;
   sets: LogSet[];
+  isCompleted?: boolean;
+  completedAt?: number;
 }
 
 export interface SessionDraft {
@@ -24,6 +26,7 @@ interface SessionDraftState {
   getDraft: (sessionId: string) => SessionDraft | undefined;
   clearDraft: (sessionId: string) => void;
   clearAllDrafts: () => void;
+  markExerciseCompleted: (sessionId: string, logIndex: number, isCompleted: boolean) => void;
 }
 
 export const useSessionDraftStore = create<SessionDraftState>()(
@@ -57,6 +60,33 @@ export const useSessionDraftStore = create<SessionDraftState>()(
 
       clearAllDrafts: () => {
         set({ drafts: {} });
+      },
+
+      markExerciseCompleted: (sessionId, logIndex, isCompleted) => {
+        set((state) => {
+          const draft = state.drafts[sessionId];
+          if (!draft || !draft.logs[logIndex]) {
+            return state;
+          }
+
+          const updatedLogs = [...draft.logs];
+          updatedLogs[logIndex] = {
+            ...updatedLogs[logIndex],
+            isCompleted,
+            completedAt: isCompleted ? Date.now() : undefined,
+          };
+
+          return {
+            drafts: {
+              ...state.drafts,
+              [sessionId]: {
+                ...draft,
+                logs: updatedLogs,
+                timestamp: Date.now(),
+              },
+            },
+          };
+        });
       },
     }),
     {

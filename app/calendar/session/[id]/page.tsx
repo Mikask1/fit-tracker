@@ -44,6 +44,8 @@ const loggingSchema = z.object({
       weight: z.number().min(0),
       reps: z.number().min(0),
     })),
+    isCompleted: z.boolean().optional(),
+    completedAt: z.number().optional(),
   })),
 });
 
@@ -61,11 +63,12 @@ function SortableExerciseLogCard({
   onAddSet,
   onRemoveSet,
   onUpdateSet,
+  onToggleExerciseCompletion,
   onRemove,
   onSwitchMovement,
   canRemove,
 }: {
-  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number }> };
+  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number }>; isCompleted?: boolean; completedAt?: number };
   index: number;
   exerciseDetails?: {
     targetSets: number;
@@ -76,6 +79,7 @@ function SortableExerciseLogCard({
   onAddSet: (index: number) => void;
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
+  onToggleExerciseCompletion: (index: number, isCompleted: boolean) => void;
   onRemove?: (index: number) => void;
   onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
@@ -114,6 +118,7 @@ function SortableExerciseLogCard({
         onAddSet={onAddSet}
         onRemoveSet={onRemoveSet}
         onUpdateSet={onUpdateSet}
+        onToggleExerciseCompletion={onToggleExerciseCompletion}
         onRemove={onRemove}
         onSwitchMovement={onSwitchMovement}
         canRemove={canRemove}
@@ -209,7 +214,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
 
   // Initialize form with routine exercises
   useEffect(() => {
-    if (!routine || !session) return;
+    if (!session) return;
 
     const sessionId = resolvedParams.id;
     const draft = getDraft(sessionId);
@@ -240,8 +245,8 @@ export default function SessionLoggingPage({ params }: PageProps) {
             sets: log.sets,
           })),
         });
-      } else {
-        // Initialize new session - fetch last completed data for each movement
+      } else if (routine) {
+        // Initialize new session from routine - fetch last completed data for each movement
         const initializeWithLastCompleted = async () => {
           const logsWithPrefill = await Promise.all(
             routine.exercises.map(async (ex: any) => {
@@ -277,6 +282,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
         };
 
         initializeWithLastCompleted();
+      } else {
+        // Custom routine - initialize with empty logs
+        form.reset({ logs: [] });
       }
     }
   }, [routine, session, form, utils, getDraft, clearDraft, resolvedParams.id]);
@@ -385,6 +393,17 @@ export default function SessionLoggingPage({ params }: PageProps) {
     const currentLogs = form.getValues('logs');
     const updatedLogs = [...currentLogs];
     updatedLogs[logIndex].sets[setIndex][field] = value;
+    form.setValue('logs', updatedLogs);
+  };
+
+  const toggleExerciseCompletion = (logIndex: number, isCompleted: boolean) => {
+    const currentLogs = form.getValues('logs');
+    const updatedLogs = [...currentLogs];
+    updatedLogs[logIndex] = {
+      ...updatedLogs[logIndex],
+      isCompleted,
+      completedAt: isCompleted ? Date.now() : undefined,
+    };
     form.setValue('logs', updatedLogs);
   };
 
@@ -537,46 +556,80 @@ export default function SessionLoggingPage({ params }: PageProps) {
       {/* Body - Scrollable exercise list */}
       <ScrollArea className="flex-1">
         <div className="container mx-auto px-4 py-6 space-y-4">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={logs.map((_, idx) => idx)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-4 pl-8">
-                {exerciseLogs.map(({ log, index, exerciseDetails }) => (
-                  <SortableExerciseLogCard
-                    key={index}
-                    log={log}
-                    index={index}
-                    exerciseDetails={exerciseDetails}
-                    onAddSet={addSet}
-                    onRemoveSet={removeSet}
-                    onUpdateSet={updateSet}
-                    onRemove={removeMovement}
-                    onSwitchMovement={handleSwitchMovement}
-                    canRemove={logs.length > 1}
-                  />
-                ))}
+          {logs.length === 0 ? (
+            // Empty state for custom routines
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="border-2 border-dashed rounded-lg p-8 max-w-md w-full">
+                <div className="text-center space-y-4">
+                  <div className="flex justify-center">
+                    <div className="rounded-full bg-muted p-4">
+                      <Plus className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">No exercises added yet</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Tap "Add Movement" below to start building your workout
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => setAddMovementDrawerOpen(true)}
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Movement
+                  </Button>
+                </div>
               </div>
-            </SortableContext>
-          </DndContext>
-          <div className='flex flex-col items-center gap-2'>
-            <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setAddMovementDrawerOpen(true)}
-              className="min-h-11"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Movement
-            </Button>
-          </div>
+            </div>
+          ) : (
+            // Exercise list
+            <>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={logs.map((_, idx) => idx)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4 pl-8">
+                    {exerciseLogs.map(({ log, index, exerciseDetails }) => (
+                      <SortableExerciseLogCard
+                        key={index}
+                        log={log}
+                        index={index}
+                        exerciseDetails={exerciseDetails}
+                        onAddSet={addSet}
+                        onRemoveSet={removeSet}
+                        onUpdateSet={updateSet}
+                        onToggleExerciseCompletion={toggleExerciseCompletion}
+                        onRemove={removeMovement}
+                        onSwitchMovement={handleSwitchMovement}
+                        canRemove={logs.length > 1}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+              <div className='flex flex-col items-center gap-2'>
+                <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAddMovementDrawerOpen(true)}
+                  className="min-h-11"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Movement
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </ScrollArea>
 

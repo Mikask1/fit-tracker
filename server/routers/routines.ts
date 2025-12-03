@@ -3,6 +3,7 @@ import { router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import Routine from '@/lib/models/Routine';
 import mongoose from 'mongoose';
+import { isReservedRoutineName } from '@/lib/constants';
 
 const alternativeMovementSchema = z.object({
   movementId: z.string(),
@@ -33,7 +34,12 @@ export const routinesRouter = router({
   create: protectedProcedure
     .input(
       z.object({
-        name: z.string().min(1),
+        name: z.string()
+          .min(1)
+          .refine(
+            (name) => !isReservedRoutineName(name),
+            { message: 'This routine name is reserved' }
+          ),
         exercises: z.array(exerciseSchema).default([]),
       })
     )
@@ -86,7 +92,13 @@ export const routinesRouter = router({
     .input(
       z.object({
         id: z.string(),
-        name: z.string().min(1).optional(),
+        name: z.string()
+          .min(1)
+          .refine(
+            (name) => !isReservedRoutineName(name),
+            { message: 'This routine name is reserved' }
+          )
+          .optional(),
         exercises: z.array(exerciseSchema).optional(),
       })
     )
