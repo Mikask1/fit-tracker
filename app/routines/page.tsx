@@ -72,6 +72,12 @@ export default function RoutinesPage() {
           movementId: typeof ex.movementId === 'object' && ex.movementId !== null
             ? ex.movementId._id.toString()
             : ex.movementId?.toString() ?? '',
+          alternativeMovements: ex.alternativeMovements?.map((alt: any) => ({
+            movementId: typeof alt.movementId === 'object' && alt.movementId !== null
+              ? alt.movementId._id.toString()
+              : alt.movementId?.toString() ?? '',
+            order: alt.order,
+          })) || [],
           targetSets: ex.targetSets,
           targetReps: ex.targetReps,
           targetWeight: ex.targetWeight || 0,

@@ -14,11 +14,10 @@ const exerciseSchema = z.object({
   movementId: z.string(),
   alternativeMovements: z.array(alternativeMovementSchema)
     .max(5, 'Cannot have more than 5 alternative movements')
-    .optional()
     .default([])
     .refine(
       (alternatives) => {
-        if (!alternatives || alternatives.length === 0) return true;
+        if (alternatives.length === 0) return true;
         const ids = alternatives.map(a => a.movementId);
         return ids.length === new Set(ids).size;
       },

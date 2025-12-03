@@ -339,6 +339,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
 
             return {
               movementId: exMovementId,
+              alternativeMovements: ex.alternativeMovements || [],
               targetSets: log.sets.length, // Actual number of sets performed
               targetReps: avgReps, // Average reps performed
               targetWeight: avgWeight, // Average weight used
@@ -349,6 +350,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
           // Exercise not performed in this session, keep existing values
           return {
             movementId: exMovementId,
+            alternativeMovements: ex.alternativeMovements || [],
             targetSets: ex.targetSets,
             targetReps: ex.targetReps,
             targetWeight: ex.targetWeight || 0,

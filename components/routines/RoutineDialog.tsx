@@ -39,11 +39,10 @@ const exerciseSchema = z.object({
   movementId: z.string(),
   alternativeMovements: z.array(alternativeMovementSchema)
     .max(5, 'Cannot have more than 5 alternative movements')
-    .optional()
     .default([])
     .refine(
       (alternatives) => {
-        if (!alternatives || alternatives.length === 0) return true;
+        if (alternatives.length === 0) return true;
         const ids = alternatives.map(a => a.movementId);
         return ids.length === new Set(ids).size;
       },
@@ -65,9 +64,22 @@ const routineSchema = z.object({
   exercises: z.array(exerciseSchema),
 });
 
-type RoutineFormData = z.infer<typeof routineSchema>;
-export type ExerciseFormData = z.infer<typeof exerciseSchema>;
 export type AlternativeMovementFormData = z.infer<typeof alternativeMovementSchema>;
+
+// Manually override ExerciseFormData to make alternativeMovements required
+export type ExerciseFormData = {
+  movementId: string;
+  alternativeMovements: AlternativeMovementFormData[];
+  targetSets: number;
+  targetReps: number;
+  targetWeight: number;
+  order: number;
+};
+
+type RoutineFormData = {
+  name: string;
+  exercises: ExerciseFormData[];
+};
 
 interface RoutineDrawerProps {
   open: boolean;
@@ -89,7 +101,7 @@ export function RoutineDrawer({
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
 
   const form = useForm<RoutineFormData>({
-    resolver: zodResolver(routineSchema),
+    resolver: zodResolver(routineSchema) as any,
     defaultValues: {
       name: '',
       exercises: [],
