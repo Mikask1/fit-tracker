@@ -17,7 +17,7 @@ interface ExerciseLogCardProps {
   log: {
     movementId: string;
     movementName: string;
-    sets: Array<{ weight: number; reps: number }>;
+    sets: Array<{ weight: number; reps: number; isCompleted?: boolean }>;
     isCompleted?: boolean;
     completedAt?: number;
   };
@@ -32,6 +32,7 @@ interface ExerciseLogCardProps {
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
   onToggleExerciseCompletion: (index: number, isCompleted: boolean) => void;
+  onToggleSetCompletion?: (index: number, setIndex: number, isCompleted: boolean) => void;
   onRemove?: (index: number) => void;
   onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
@@ -45,6 +46,7 @@ export function ExerciseLogCard({
   onRemoveSet,
   onUpdateSet,
   onToggleExerciseCompletion,
+  onToggleSetCompletion,
   onRemove,
   onSwitchMovement,
   canRemove = true,
@@ -78,6 +80,10 @@ export function ExerciseLogCard({
   const hasAlternatives = exerciseDetails?.alternativeMovements &&
     exerciseDetails.alternativeMovements.length > 0;
 
+  // Calculate if all sets are completed
+  const allSetsCompleted = log.sets.length > 0 && log.sets.every(set => set.isCompleted);
+  const someSetsCompleted = log.sets.some(set => set.isCompleted);
+
   return (
     <>
       <div
@@ -89,16 +95,23 @@ export function ExerciseLogCard({
             <div className="flex-1">
               <div className="flex items-center gap-3">
                 <Checkbox
-                  checked={log.isCompleted || false}
-                  onCheckedChange={(checked) =>
-                    onToggleExerciseCompletion(index, checked === true)
-                  }
+                  checked={allSetsCompleted}
+                  onCheckedChange={(checked) => {
+                    const isChecked = checked === true;
+                    onToggleExerciseCompletion(index, isChecked);
+                    // When parent is toggled, toggle all sets as well
+                    if (onToggleSetCompletion) {
+                      log.sets.forEach((_, setIndex) => {
+                        onToggleSetCompletion(index, setIndex, isChecked);
+                      });
+                    }
+                  }}
                   className="h-5 w-5 mt-0.5"
-                  aria-label={`Mark ${log.movementName} as ${log.isCompleted ? 'incomplete' : 'complete'}`}
+                  aria-label={`Mark ${log.movementName} as ${allSetsCompleted ? 'incomplete' : 'complete'}`}
                 />
                 <h3 className={cn(
                   "font-semibold text-lg",
-                  log.isCompleted && "line-through opacity-60"
+                  allSetsCompleted && "line-through opacity-60"
                 )}>
                   {log.movementName}
                 </h3>
@@ -164,6 +177,25 @@ export function ExerciseLogCard({
               key={setIndex}
               className="flex items-center gap-1"
             >
+              <Checkbox
+                checked={set.isCompleted || false}
+                onCheckedChange={(checked) => {
+                  const isChecked = checked === true;
+                  if (onToggleSetCompletion) {
+                    onToggleSetCompletion(index, setIndex, isChecked);
+                  }
+
+                  // After toggling this set, check if all sets will be completed
+                  // and update the parent exercise accordingly
+                  const updatedSets = log.sets.map((s, i) =>
+                    i === setIndex ? { ...s, isCompleted: isChecked } : s
+                  );
+                  const allWillBeCompleted = updatedSets.every(s => s.isCompleted);
+                  onToggleExerciseCompletion(index, allWillBeCompleted);
+                }}
+                className="h-4 w-4"
+                aria-label={`Mark set ${setIndex + 1} as ${set.isCompleted ? 'incomplete' : 'complete'}`}
+              />
               <span className="text-sm font-medium text-muted-foreground w-10">
                 Set {setIndex + 1}
               </span>

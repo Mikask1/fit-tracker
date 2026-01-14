@@ -43,6 +43,7 @@ const loggingSchema = z.object({
     sets: z.array(z.object({
       weight: z.number().min(0),
       reps: z.number().min(0),
+      isCompleted: z.boolean().optional(),
     })),
     isCompleted: z.boolean().optional(),
     completedAt: z.number().optional(),
@@ -64,11 +65,12 @@ function SortableExerciseLogCard({
   onRemoveSet,
   onUpdateSet,
   onToggleExerciseCompletion,
+  onToggleSetCompletion,
   onRemove,
   onSwitchMovement,
   canRemove,
 }: {
-  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number }>; isCompleted?: boolean; completedAt?: number };
+  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number; isCompleted?: boolean }>; isCompleted?: boolean; completedAt?: number };
   index: number;
   exerciseDetails?: {
     targetSets: number;
@@ -80,6 +82,7 @@ function SortableExerciseLogCard({
   onRemoveSet: (index: number, setIndex: number) => void;
   onUpdateSet: (index: number, setIndex: number, field: 'weight' | 'reps', value: number) => void;
   onToggleExerciseCompletion: (index: number, isCompleted: boolean) => void;
+  onToggleSetCompletion?: (index: number, setIndex: number, isCompleted: boolean) => void;
   onRemove?: (index: number) => void;
   onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
@@ -119,6 +122,7 @@ function SortableExerciseLogCard({
         onRemoveSet={onRemoveSet}
         onUpdateSet={onUpdateSet}
         onToggleExerciseCompletion={onToggleExerciseCompletion}
+        onToggleSetCompletion={onToggleSetCompletion}
         onRemove={onRemove}
         onSwitchMovement={onSwitchMovement}
         canRemove={canRemove}
@@ -416,6 +420,16 @@ export default function SessionLoggingPage({ params }: PageProps) {
     form.setValue('logs', updatedLogs);
   };
 
+  const toggleSetCompletion = (logIndex: number, setIndex: number, isCompleted: boolean) => {
+    const currentLogs = form.getValues('logs');
+    const updatedLogs = [...currentLogs];
+    updatedLogs[logIndex].sets[setIndex] = {
+      ...updatedLogs[logIndex].sets[setIndex],
+      isCompleted,
+    };
+    form.setValue('logs', updatedLogs);
+  };
+
   const addMovement = async (movementId: string, movementName: string) => {
     const currentLogs = form.getValues('logs');
 
@@ -617,6 +631,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
                         onRemoveSet={removeSet}
                         onUpdateSet={updateSet}
                         onToggleExerciseCompletion={toggleExerciseCompletion}
+                        onToggleSetCompletion={toggleSetCompletion}
                         onRemove={removeMovement}
                         onSwitchMovement={handleSwitchMovement}
                         canRemove={logs.length > 1}

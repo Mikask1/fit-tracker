@@ -65,9 +65,9 @@ export function TimerTab() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full px-4 py-8 space-y-8">
+    <div className="flex flex-col items-center justify-center h-full px-4 py-8">
       {/* Display area */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div className="flex flex-col items-center gap-6 w-full max-w-md">
         {!timerIsRunning && !timerIsPaused ? (
           <>
             {/* Time Picker (not running) */}
@@ -78,7 +78,7 @@ export function TimerTab() {
             />
 
             {/* Preset Timer Buttons */}
-            <div className="grid sm:grid-cols-4 grid-cols-2 gap-3 w-full max-w-md">
+            <div className="grid sm:grid-cols-4 grid-cols-2 gap-3 w-full">
               <Button
                 onClick={() => handlePreset(1)}
                 variant="outline"
@@ -112,30 +112,25 @@ export function TimerTab() {
                 5 min
               </Button>
             </div>
+
+            {/* Start button */}
+            <Button
+              onClick={handleStart}
+              disabled={timerDuration === 0}
+              size="lg"
+              className="w-full min-h-14 text-lg"
+            >
+              <Play className="h-5 w-5 mr-2" />
+              Start
+            </Button>
           </>
         ) : (
-          // Time Display (running or paused)
-          <div className="text-8xl font-light tabular-nums">
-            {formatTime(timerRemaining)}
-          </div>
-        )}
-      </div>
-
-      {/* Control buttons */}
-      <div className="flex flex-col gap-3 w-full max-w-sm">
-        {!timerIsRunning && !timerIsPaused ? (
-          // Start button
-          <Button
-            onClick={handleStart}
-            disabled={timerDuration === 0}
-            size="lg"
-            className="w-full min-h-14 text-lg"
-          >
-            <Play className="h-5 w-5 mr-2" />
-            Start
-          </Button>
-        ) : (
           <>
+            {/* Time Display (running or paused) */}
+            <div className="text-8xl font-light tabular-nums">
+              {formatTime(timerRemaining)}
+            </div>
+
             {/* Pause/Resume button */}
             <Button
               onClick={timerIsRunning ? handlePause : handleResume}

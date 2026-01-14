@@ -25,7 +25,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MAIN_MUSCLE_GROUPS, normalizeMuscleGroup } from '@/lib/constants/muscleGroups';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Plus } from 'lucide-react';
+import { MovementDialog } from '@/components/movements/MovementDrawer';
 
 interface AddMovementDrawerProps {
   open: boolean;
@@ -42,7 +43,9 @@ export function AddMovementDrawer({
 }: AddMovementDrawerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<string>('all');
+  const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
 
+  const utils = trpc.useUtils();
   const { data: movements, isLoading } = trpc.movements.list.useQuery(
     undefined,
     { enabled: open }
@@ -72,6 +75,12 @@ export function AddMovementDrawer({
     onOpenChange(false);
   };
 
+  const handleMovementCreated = async () => {
+    // Refresh the movements list when a new movement is created
+    await utils.movements.list.invalidate();
+    setIsMovementDialogOpen(false);
+  };
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh]">
@@ -92,7 +101,7 @@ export function AddMovementDrawer({
               className="h-11 flex-1"
             />
             <Select value={muscleFilter} onValueChange={setMuscleFilter}>
-              <SelectTrigger className="h-11 sm:w-48">
+              <SelectTrigger className="h-11 py-5 sm:w-48">
                 <SelectValue placeholder="Filter by muscle group" />
               </SelectTrigger>
               <SelectContent>
@@ -104,6 +113,14 @@ export function AddMovementDrawer({
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              type="button"
+              onClick={() => setIsMovementDialogOpen(true)}
+              className="h-11 sm:w-auto"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Create New
+            </Button>
           </div>
 
           {/* Movement List */}
@@ -179,6 +196,15 @@ export function AddMovementDrawer({
           </Button>
         </DrawerFooter>
       </DrawerContent>
+
+      {/* Movement Creation Dialog */}
+      <MovementDialog
+        open={isMovementDialogOpen}
+        onOpenChange={setIsMovementDialogOpen}
+        editingId={null}
+        onSuccess={handleMovementCreated}
+        onDelete={() => {}}
+      />
     </Drawer>
   );
 }
