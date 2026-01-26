@@ -14,7 +14,7 @@ export function BodyPaddingWrapper({ children }: BodyPaddingWrapperProps) {
   const shouldRemovePadding = AUTH_ROUTES.includes(pathname);
 
   return (
-    <div className={shouldRemovePadding ? '' : 'pb-16'}>
+    <div className={shouldRemovePadding ? '' : 'pb-nav-safe'}>
       {children}
     </div>
   );
