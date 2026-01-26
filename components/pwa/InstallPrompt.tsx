@@ -19,12 +19,8 @@ export function InstallPrompt() {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
-      // Show prompt after some user engagement (3+ page views)
-      const pageViews = parseInt(localStorage.getItem('pageViews') || '0', 10);
-      if (pageViews >= 3) {
-        setShowInstallPrompt(true);
-      }
-      localStorage.setItem('pageViews', String(pageViews + 1));
+      // Show prompt immediately
+      setShowInstallPrompt(true);
     };
 
     window.addEventListener('beforeinstallprompt', handler);

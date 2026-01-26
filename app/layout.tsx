@@ -7,6 +7,7 @@ import { BottomNavWrapper } from "@/components/navigation/BottomNavWrapper";
 import { BodyPaddingWrapper } from "@/components/layout/BodyPaddingWrapper";
 import { NetworkStatus } from "@/components/pwa/NetworkStatus";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { SafariInstallPrompt } from "@/components/pwa/SafariInstallPrompt";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 
 const geistSans = Geist({
@@ -70,6 +71,7 @@ export default function RootLayout({
         <BottomNavWrapper />
         <Toaster />
         <InstallPrompt />
+        <SafariInstallPrompt />
         <UpdatePrompt />
       </body>
     </html>
