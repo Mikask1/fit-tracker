@@ -122,18 +122,22 @@
 }
 
 /* Safe area support for iOS notch/home indicator */
+/* Fallbacks for browsers without safe area support */
+.pb-safe {
+  padding-bottom: 0.5rem;
+}
+
+.pb-nav-safe {
+  padding-bottom: 4rem;
+}
+
+/* Enhanced padding for browsers with safe area support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {
     padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
   }
 
-  /* Bottom padding for content when nav bar is visible (nav height + safe area) */
   .pb-nav-safe {
     padding-bottom: calc(4rem + env(safe-area-inset-bottom) + 0.5rem);
   }
-}
-
-/* Fallback for browsers without safe area support */
-.pb-nav-safe {
-  padding-bottom: 4rem;
 }
