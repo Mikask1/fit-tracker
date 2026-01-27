@@ -658,7 +658,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
       </ScrollArea>
 
       {/* Footer - Sticky action buttons */}
-      <div className="border-t bg-background sticky bottom-0 z-50 pb-20">
+      <div className="border-t bg-background sticky bottom-0 z-40 pb-nav-safe">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col gap-2">
             <Button
