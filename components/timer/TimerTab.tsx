@@ -6,6 +6,8 @@ import { Play, Pause, X } from 'lucide-react';
 import { useTimerStore } from '@/store/timerStore';
 import { useTimer } from '@/hooks/useTimer';
 import { TimePicker } from './TimePicker';
+import { requestNotificationPermission, getNotificationPermission } from '@/lib/notifications';
+import { toast } from 'sonner';
 
 // Format milliseconds dynamically based on duration
 function formatTime(ms: number): string {
@@ -41,10 +43,26 @@ export function TimerTab() {
     }
   }, [timerDuration, setTimerDuration]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (timerDuration === 0) {
       return; // Don't start if no time set
     }
+
+    // Request notification permission if not already granted
+    const permission = getNotificationPermission();
+    if (permission === 'default') {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        toast.success('Notifications enabled! You\'ll be notified when timer completes.', {
+          duration: 3000,
+        });
+      } else {
+        toast.info('Enable notifications in settings to get alerts when timer completes.', {
+          duration: 5000,
+        });
+      }
+    }
+
     startTimer();
   };
 

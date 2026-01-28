@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useTimerStore } from '@/store/timerStore';
 import { toast } from 'sonner';
+import { sendNotification, vibrate } from '@/lib/notifications';
 
 export function useTimer() {
   const {
@@ -39,10 +40,22 @@ export function useTimer() {
           audioRef.current.play().catch(err => console.error('Audio play failed:', err));
         }
 
-        // Show notification
+        // Vibrate device (mobile)
+        vibrate([200, 100, 200, 100, 200]);
+
+        // Show in-app toast
         toast.success('Timer completed!', {
           duration: 5000,
         });
+
+        // Send system notification (works even when app is backgrounded)
+        sendNotification({
+          title: '⏱️ Timer Completed!',
+          body: 'Your workout timer has finished',
+          tag: 'timer-complete',
+          requireInteraction: true,
+          vibrate: [200, 100, 200, 100, 200],
+        }).catch(err => console.error('Failed to send notification:', err));
       }
 
       return;

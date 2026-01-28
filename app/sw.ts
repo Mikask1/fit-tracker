@@ -141,3 +141,30 @@ const serwist = new Serwist({
 
 // Start listening to fetch events
 serwist.addEventListeners();
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      // Get all windows
+      const allClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+
+      // If a window is already open, focus it
+      for (const client of allClients) {
+        if (client.url === self.location.origin && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      // Otherwise, open a new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow('/timer');
+      }
+    })()
+  );
+});
