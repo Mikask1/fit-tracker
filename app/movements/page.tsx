@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { MovementsList } from '@/components/movements/MovementsList';
 import { MovementDialog } from '@/components/movements/MovementDrawer';
+import { ShareTargetHandler } from '@/components/movements/ShareTargetHandler';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -14,6 +15,7 @@ export default function MovementsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [sharedData, setSharedData] = useState<{ name?: string; note?: string; image?: string } | null>(null);
 
   const { data: movements, isLoading } = trpc.movements.list.useQuery();
   const utils = trpc.useUtils();
@@ -56,12 +58,23 @@ export default function MovementsPage() {
 
   const handleAddMovement = () => {
     setEditingId(null);
+    setSharedData(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleSharedContent = (data: { name?: string; note?: string; image?: string }) => {
+    setSharedData(data);
+    setEditingId(null);
     setIsDialogOpen(true);
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Header */}
+    <>
+      <Suspense fallback={null}>
+        <ShareTargetHandler onShare={handleSharedContent} />
+      </Suspense>
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Movements Library</h1>
@@ -92,9 +105,11 @@ export default function MovementsPage() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         editingId={editingId}
+        initialData={sharedData || undefined}
         onSuccess={() => {
           setIsDialogOpen(false);
           setEditingId(null);
+          setSharedData(null);
         }}
         onDelete={handleDelete}
       />
@@ -113,6 +128,7 @@ export default function MovementsPage() {
         confirmText="Delete"
         variant="destructive"
       />
-    </div>
+      </div>
+    </>
   );
 }

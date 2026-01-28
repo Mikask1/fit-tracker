@@ -55,6 +55,11 @@ interface MovementDialogProps {
   editingId: string | null;
   onSuccess?: () => void;
   onDelete?: (id: string) => void;
+  initialData?: {
+    name?: string;
+    note?: string;
+    image?: string;
+  };
 }
 
 export function MovementDialog({
@@ -63,6 +68,7 @@ export function MovementDialog({
   editingId,
   onSuccess,
   onDelete,
+  initialData,
 }: MovementDialogProps) {
   const utils = trpc.useUtils();
   const isEditing = !!editingId;
@@ -95,16 +101,16 @@ export function MovementDialog({
           note: movementData.note || '',
         });
       } else if (!isEditing) {
-        // Create mode: reset to defaults
+        // Create mode: use shared data or defaults
         form.reset({
-          name: '',
+          name: initialData?.name || '',
           muscleGroups: [],
-          image: '',
-          note: '',
+          image: initialData?.image || '',
+          note: initialData?.note || '',
         });
       }
     }
-  }, [open, isEditing, movementData, form]);
+  }, [open, isEditing, movementData, form, initialData]);
 
   const createMutation = trpc.movements.create.useMutation({
     onSuccess: async () => {
