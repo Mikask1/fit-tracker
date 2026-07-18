@@ -6,9 +6,11 @@ import { Drawer as DrawerPrimitive } from "vaul"
 import { cn } from "@/lib/utils"
 
 function Drawer({
+  nested,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />
+}: React.ComponentProps<typeof DrawerPrimitive.Root> & { nested?: boolean }) {
+  const Root = nested ? DrawerPrimitive.NestedRoot : DrawerPrimitive.Root
+  return <Root data-slot="drawer" {...props} />
 }
 
 function DrawerTrigger({

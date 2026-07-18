@@ -14,6 +14,7 @@ export interface ISessionLog {
   movementId: mongoose.Types.ObjectId;
   movementName: string; // Snapshot for data preservation
   sets: ISet[];
+  note?: string; // Optional note for this movement (covers all its sets)
   isCompleted?: boolean;
   completedAt?: number;
 }
@@ -25,6 +26,7 @@ export interface IWorkoutSession extends Document {
   sourceRoutineId?: mongoose.Types.ObjectId;
   status: SessionStatus;
   logs: ISessionLog[];
+  notes?: string; // Optional note for the whole workout
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +65,11 @@ const sessionLogSchema = new Schema<ISessionLog>(
       type: [setSchema],
       default: [],
     },
+    note: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     isCompleted: {
       type: Boolean,
       required: false,
@@ -99,6 +106,11 @@ const workoutSessionSchema = new Schema<IWorkoutSession>(
     logs: {
       type: [sessionLogSchema],
       default: [],
+    },
+    notes: {
+      type: String,
+      required: false,
+      trim: true,
     },
   },
   {

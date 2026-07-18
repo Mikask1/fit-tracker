@@ -13,6 +13,7 @@ const sessionLogSchema = z.object({
   movementId: z.string(),
   movementName: z.string(), // Snapshot
   sets: z.array(setSchema).default([]),
+  note: z.string().optional(),
   isCompleted: z.boolean().optional(),
   completedAt: z.number().optional(),
 });
@@ -39,6 +40,7 @@ export const sessionsRouter = router({
           movementId: new mongoose.Types.ObjectId(log.movementId),
           movementName: log.movementName,
           sets: log.sets,
+          note: log.note,
         })),
       });
 
@@ -94,6 +96,7 @@ export const sessionsRouter = router({
         id: z.string(),
         status: z.nativeEnum(SessionStatus).optional(),
         logs: z.array(sessionLogSchema).optional(),
+        notes: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -105,6 +108,7 @@ export const sessionsRouter = router({
           movementId: new mongoose.Types.ObjectId(log.movementId),
           movementName: log.movementName,
           sets: log.sets,
+          note: log.note,
         }));
       }
 

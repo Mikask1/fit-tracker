@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { trpc } from '@/lib/trpc/client';
-import { SessionStatus, type IWorkoutSession } from '@/types';
+import { SessionStatus } from '@/types';
 import {
   Drawer,
   DrawerContent,
@@ -19,9 +19,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { MenuDrawer } from '@/components/shared/MenuDrawer';
+import { NoteDrawer } from '@/components/shared/NoteDrawer';
+import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { EllipsisVertical } from 'lucide-react';
 import { CUSTOM_ROUTINE_ID } from '@/lib/constants';
 
 const sessionSchema = z.object({
@@ -61,6 +63,8 @@ export function SessionDrawer({
   const utils = trpc.useUtils();
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('VIEW');
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNoteDrawerOpen, setIsNoteDrawerOpen] = useState(false);
 
   const form = useForm<SessionFormData>({
     resolver: zodResolver(sessionSchema),
@@ -131,6 +135,20 @@ export function SessionDrawer({
     },
   });
 
+  // Saving a workout note should refresh the session but keep the drawer open.
+  const noteMutation = trpc.sessions.update.useMutation({
+    onSuccess: async () => {
+      if (sessionId) {
+        await utils.sessions.getById.invalidate({ id: sessionId });
+      }
+      await utils.sessions.listByDateRange.invalidate();
+      toast.success('Note saved');
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+
   // Load session data when available
   useEffect(() => {
     if (session && open) {
@@ -153,13 +171,18 @@ export function SessionDrawer({
     setIsDeleteConfirmOpen(false);
   };
 
+  const handleSaveNote = async (notes: string) => {
+    if (!sessionId) return;
+    await noteMutation.mutateAsync({ id: sessionId, notes });
+  };
+
   const handleCreateSession = async (data: SessionFormData) => {
     if (!data.routineId) {
       toast.error('Please select a routine');
       return;
     }
 
-    await createMutation.mutateAsync({
+    const created = await createMutation.mutateAsync({
       date,
       sourceRoutineId: data.routineId === CUSTOM_ROUTINE_ID
         ? undefined
@@ -167,7 +190,14 @@ export function SessionDrawer({
       status: SessionStatus.PLANNED,
       logs: [],
     });
-    onOpenChange(false);
+
+    // For today's session, jump straight into the Log Workout view.
+    // For any other day, keep the current behaviour (just close the drawer).
+    if (isToday(date) && created?._id) {
+      router.push(`/calendar/session/${created._id.toString()}`);
+    } else {
+      onOpenChange(false);
+    }
   };
 
   const onSubmit = async (data: SessionFormData) => {
@@ -178,7 +208,7 @@ export function SessionDrawer({
     }
   };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || noteMutation.isPending;
 
   // Render different content based on mode
   const renderContent = () => {
@@ -207,6 +237,12 @@ export function SessionDrawer({
           <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
           <p className="text-lg font-semibold">{session?.status}</p>
         </div>
+        {session?.notes && (
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground">Note</h4>
+            <p className="text-sm whitespace-pre-wrap">{session.notes}</p>
+          </div>
+        )}
         {session?.logs && session.logs.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">Exercises</h4>
@@ -221,6 +257,11 @@ export function SessionDrawer({
                       </div>
                     ))}
                   </div>
+                  {log.note && (
+                    <p className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap">
+                      {log.note}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -306,97 +347,92 @@ export function SessionDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
+        {/* ⋮ Options menu (add note / delete) for existing sessions */}
+        {sessionId && drawerMode !== 'CREATE' && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMenuOpen(true)}
+            disabled={isLoading}
+            className="absolute right-3 top-3 h-9 w-9"
+            title="Options"
+          >
+            <EllipsisVertical className="h-5 w-5" />
+          </Button>
+        )}
+
         <ScrollArea className="flex-1 overflow-auto">
           {renderContent()}
         </ScrollArea>
 
         <DrawerFooter className="border-t">
           <div className="flex flex-col gap-2 w-full">
-            {/* Action buttons based on mode */}
-            {drawerMode === 'VIEW' && (
-              <>
-                {session?.status === SessionStatus.COMPLETED && (
-                  <Button
-                    onClick={() => router.push(`/calendar/session/${sessionId}`)}
-                    disabled={isLoading}
-                    className="min-h-11"
-                  >
-                    Edit Session
-                  </Button>
-                )}
-                <Button
-                  variant="destructive"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Session
-                </Button>
-              </>
-            )}
-
-            {drawerMode === 'EDIT' && (
-              <>
-                <Button
-                  variant="destructive"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Session
-                </Button>
-              </>
+            {/* Action buttons based on mode. Delete & note live in the ⋮ menu. */}
+            {drawerMode === 'VIEW' && session?.status === SessionStatus.COMPLETED && (
+              <Button
+                onClick={() => router.push(`/calendar/session/${sessionId}`)}
+                disabled={isLoading}
+                className="min-h-11"
+              >
+                Edit Session
+              </Button>
             )}
 
             {drawerMode === 'TODAY' && (
-              <>
-                <Button
-                  onClick={() => router.push(`/calendar/session/${sessionId}`)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  Log Workout
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Session
-                </Button>
-              </>
+              <Button
+                onClick={() => router.push(`/calendar/session/${sessionId}`)}
+                disabled={isLoading}
+                className="min-h-11"
+              >
+                Log Workout
+              </Button>
             )}
 
             {drawerMode === 'CREATE' && (
-              <>
-                <Button
-                  onClick={form.handleSubmit(onSubmit)}
-                  disabled={isLoading}
-                  className="min-h-11"
-                >
-                  {isLoading ? 'Creating...' : 'Create Session'}
-                </Button>
-              </>
+              <Button
+                onClick={form.handleSubmit(onSubmit)}
+                disabled={isLoading}
+                className="min-h-11"
+              >
+                {isLoading ? 'Creating...' : 'Create Session'}
+              </Button>
             )}
           </div>
         </DrawerFooter>
+
+        {/* ⋮ Options menu + note + delete confirm, nested inside this drawer */}
+        <MenuDrawer
+          nested
+          open={isMenuOpen}
+          onOpenChange={setIsMenuOpen}
+          title="Workout options"
+          hasNote={!!session?.notes}
+          onAddNote={() => setIsNoteDrawerOpen(true)}
+          onDelete={() => setIsDeleteConfirmOpen(true)}
+        />
+
+        <NoteDrawer
+          nested
+          open={isNoteDrawerOpen}
+          onOpenChange={setIsNoteDrawerOpen}
+          title="Workout note"
+          initialValue={session?.notes ?? ''}
+          onSave={handleSaveNote}
+        />
+
+        <ConfirmDrawer
+          nested
+          open={isDeleteConfirmOpen}
+          onOpenChange={setIsDeleteConfirmOpen}
+          onConfirm={handleDelete}
+          title="Delete Session?"
+          description="This will permanently delete this workout session. This action cannot be undone."
+          confirmText="Delete"
+          variant="destructive"
+        />
       </DrawerContent>
     </Drawer>
-
-    {/* Confirm Dialog */}
-    <ConfirmDialog
-      open={isDeleteConfirmOpen}
-      onOpenChange={setIsDeleteConfirmOpen}
-      onConfirm={handleDelete}
-      title="Delete Session?"
-      description="This will permanently delete this workout session. This action cannot be undone."
-      confirmText="Delete"
-      variant="destructive"
-    />
   </>
   );
 }
