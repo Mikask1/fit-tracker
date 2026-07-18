@@ -5,8 +5,8 @@ import {
   CacheFirst,
   StaleWhileRevalidate,
   NetworkFirst,
+  NetworkOnly,
   ExpirationPlugin,
-  CacheableResponsePlugin,
 } from "serwist";
 
 // Declare SW types
@@ -33,6 +33,12 @@ const serwist = new Serwist({
     ],
   },
   runtimeCaching: [
+    // Connectivity probe - must NEVER be served from cache, or a dead
+    // connection would look healthy to the offline sync engine
+    {
+      matcher: ({ url }) => url.pathname === "/api/health",
+      handler: new NetworkOnly(),
+    },
     // Google Fonts (gstatic.com) - CacheFirst
     {
       matcher: /^https:\/\/fonts\.gstatic\.com\/.*/i,
@@ -99,26 +105,13 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // tRPC API calls (GET only) - NetworkFirst
+    // tRPC API calls - NetworkOnly. Data-layer offline caching lives in the
+    // app's IndexedDB-persisted React Query cache; if the SW served stale
+    // HTTP responses here, offline refetches would overwrite the optimistic
+    // updates applied by the mutation outbox.
     {
-      matcher: ({ request }) => {
-        const isTrpcRequest = request.url.includes("/api/trpc");
-        const isGetRequest = request.method === "GET";
-        return isTrpcRequest && isGetRequest;
-      },
-      handler: new NetworkFirst({
-        cacheName: "trpc-api-cache",
-        plugins: [
-          new ExpirationPlugin({
-            maxEntries: 16,
-            maxAgeSeconds: 5 * 60, // 5 minutes
-          }),
-          new CacheableResponsePlugin({
-            statuses: [0, 200],
-          }),
-        ],
-        networkTimeoutSeconds: 10,
-      }),
+      matcher: ({ request }) => request.url.includes("/api/trpc"),
+      handler: new NetworkOnly(),
     },
     // HTML pages - NetworkFirst with offline fallback
     {

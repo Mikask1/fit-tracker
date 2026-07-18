@@ -8,6 +8,12 @@ const handler = (req: Request) =>
     req,
     router: appRouter,
     createContext,
+    // Browsers heuristically cache GET responses that lack Cache-Control and
+    // will serve them from disk cache even while offline — which would feed
+    // stale data over the app's IndexedDB offline cache. Never cache.
+    responseMeta: () => ({
+      headers: { 'Cache-Control': 'no-store' },
+    }),
   });
 
 export { handler as GET, handler as POST };

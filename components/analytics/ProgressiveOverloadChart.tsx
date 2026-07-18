@@ -96,7 +96,8 @@ export function ProgressiveOverloadChart({
     );
   }
 
-  if (movementsError) {
+  // Keep showing cached data when a background refetch fails (e.g. offline).
+  if (movementsError && !movements) {
     return <ErrorState message={movementsError.message} />;
   }
 
@@ -209,7 +210,7 @@ export function ProgressiveOverloadChart({
         <div className="w-full h-[300px] sm:h-[400px] flex items-center justify-center">
           <Skeleton className="w-full h-full" />
         </div>
-      ) : progressionError ? (
+      ) : progressionError && !progressionData ? (
         <ErrorState message={progressionError.message} />
       ) : !progressionData || progressionData.length === 0 || chartData.length === 0 ? (
         <div className="w-full h-[300px] sm:h-[400px] flex items-center justify-center text-muted-foreground border rounded-lg">

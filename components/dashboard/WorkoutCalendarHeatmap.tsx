@@ -45,7 +45,8 @@ export function WorkoutCalendarHeatmap() {
     );
   }
 
-  if (error) {
+  // Keep showing cached data when a background refetch fails (e.g. offline).
+  if (error && !dailyWorkouts) {
     return <ErrorState message={error.message} />;
   }
 

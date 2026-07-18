@@ -531,7 +531,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
     }
   };
 
-  if (sessionError || (!sessionLoading && !session)) {
+  // Only treat it as missing when there is no cached session — a failed
+  // background refetch while offline must not hide restorable data.
+  if (!session && (sessionError || !sessionLoading)) {
     return (
       <div className="container mx-auto px-4 py-6">
         <ErrorState message="Session not found" />
