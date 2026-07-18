@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { RoutinesList } from '@/components/routines/RoutinesList';
-import { RoutineDrawer } from '@/components/routines/RoutineDialog';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { RoutineDrawer } from '@/components/routines/RoutineDrawer';
+import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -135,8 +135,8 @@ export default function RoutinesPage() {
         onDelete={handleDelete}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
+      {/* Delete Confirmation Drawer */}
+      <ConfirmDrawer
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}

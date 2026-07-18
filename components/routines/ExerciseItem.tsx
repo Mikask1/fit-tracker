@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GripVertical, Edit } from 'lucide-react';
 import { trpc } from '@/lib/trpc/client';
-import type { ExerciseFormData } from './RoutineDialog';
+import type { ExerciseFormData } from './RoutineDrawer';
 
 interface ExerciseItemProps {
   exercise: ExerciseFormData;

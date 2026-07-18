@@ -2,18 +2,18 @@
 
 import { trpc } from '@/lib/trpc/client';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from '@/components/ui/drawer';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface SwitchMovementDialogProps {
+interface SwitchMovementDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentMovementId: string;
@@ -22,14 +22,14 @@ interface SwitchMovementDialogProps {
   onSwitch: (newMovementId: string, newMovementName: string) => void;
 }
 
-export function SwitchMovementDialog({
+export function SwitchMovementDrawer({
   open,
   onOpenChange,
   currentMovementId,
   primaryMovementId,
   alternatives,
   onSwitch,
-}: SwitchMovementDialogProps) {
+}: SwitchMovementDrawerProps) {
   // Build list: [primary, ...alternatives]
   const allOptions = [
     { movementId: primaryMovementId, order: -1, isPrimary: true },
@@ -37,17 +37,17 @@ export function SwitchMovementDialog({
   ].sort((a, b) => a.order - b.order);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Switch Movement</DialogTitle>
-          <DialogDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[90vh]">
+        <DrawerHeader>
+          <DrawerTitle>Switch Movement</DrawerTitle>
+          <DrawerDescription>
             Your logged sets will be preserved. Sets/reps/weight targets will update.
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
-        <ScrollArea className="max-h-[60vh]">
-          <div className="space-y-2 pr-4">
+        <ScrollArea className="max-h-[60vh] overflow-y-auto">
+          <div className="space-y-2 px-4 pb-4">
             {allOptions.map((option) => (
               <MovementOptionCard
                 key={option.movementId}
@@ -62,8 +62,8 @@ export function SwitchMovementDialog({
             ))}
           </div>
         </ScrollArea>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
