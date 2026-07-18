@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { trpc } from '@/lib/trpc/client';
 import { SessionStatus } from '@/types';
 import { startOfWeek, endOfWeek } from 'date-fns';
@@ -124,16 +124,16 @@ export function WeeklyStats() {
         </div>
       </Card>
 
-      {/* Edit Dialog */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Weekly Goal</DialogTitle>
-            <DialogDescription>
+      {/* Edit Drawer */}
+      <Drawer open={isEditing} onOpenChange={setIsEditing}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader>
+            <DrawerTitle>Update Weekly Goal</DrawerTitle>
+            <DrawerDescription>
               Set your expected number of workouts per week
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="expected-workouts">
                 Expected workouts per week
@@ -155,25 +155,27 @@ export function WeeklyStats() {
               </p>
             </div>
           </div>
-          <DialogFooter>
+          <DrawerFooter>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+              className="min-h-11"
+            >
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
               disabled={updateMutation.isPending}
+              className="min-h-11"
             >
               Cancel
             </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-            >
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

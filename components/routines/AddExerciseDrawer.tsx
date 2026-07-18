@@ -26,13 +26,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MAIN_MUSCLE_GROUPS } from '@/lib/constants/muscleGroups';
 import { Dumbbell } from 'lucide-react';
-import type { ExerciseFormData } from './RoutineDialog';
+import type { ExerciseFormData } from './RoutineDrawer';
 
 interface AddExerciseDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddExercise: (exercise: ExerciseFormData) => void;
   excludeMovementIds: string[];
+  /** Render as a nested drawer (when opened from inside another drawer). */
+  nested?: boolean;
 }
 
 export function AddExerciseDrawer({
@@ -40,6 +42,7 @@ export function AddExerciseDrawer({
   onOpenChange,
   onAddExercise,
   excludeMovementIds,
+  nested = false,
 }: AddExerciseDrawerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<string>('all');
@@ -92,7 +95,7 @@ export function AddExerciseDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} nested={nested}>
       <DrawerContent className="max-h-[85vh]">
         <DrawerHeader>
           <DrawerTitle>Add Movement</DrawerTitle>

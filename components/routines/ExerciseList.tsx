@@ -18,8 +18,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { ExerciseItem } from './ExerciseItem';
-import { ExerciseEditDialog } from './ExerciseEditDialog';
-import type { ExerciseFormData } from './RoutineDialog';
+import { ExerciseEditDrawer } from './ExerciseEditDrawer';
+import type { ExerciseFormData } from './RoutineDrawer';
 
 interface ExerciseListProps {
   exercises: ExerciseFormData[];
@@ -139,7 +139,7 @@ export function ExerciseList({ exercises, onChange }: ExerciseListProps) {
         </SortableContext>
       </DndContext>
 
-      <ExerciseEditDialog
+      <ExerciseEditDrawer
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         exercise={editingExercise}

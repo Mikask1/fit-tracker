@@ -32,6 +32,8 @@ interface AddAlternativeDrawerProps {
   onOpenChange: (open: boolean) => void;
   onAddAlternative: (movementId: string) => void;
   excludeMovementIds: string[]; // Primary + existing alternatives
+  /** Render as a nested drawer (when opened from inside another drawer). */
+  nested?: boolean;
 }
 
 export function AddAlternativeDrawer({
@@ -39,6 +41,7 @@ export function AddAlternativeDrawer({
   onOpenChange,
   onAddAlternative,
   excludeMovementIds,
+  nested = false,
 }: AddAlternativeDrawerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<string>('all');
@@ -73,7 +76,7 @@ export function AddAlternativeDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} nested={nested}>
       <DrawerContent className="max-h-[85vh]">
         <DrawerHeader>
           <DrawerTitle>Add Alternative Movement</DrawerTitle>

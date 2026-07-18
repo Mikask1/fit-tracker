@@ -6,13 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -134,16 +134,16 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
         </CardContent>
       </Card>
 
-      {/* Duplicate Confirmation Dialog */}
-      <Dialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
-        <DialogContent onClick={(e) => e.stopPropagation()}>
-          <DialogHeader>
-            <DialogTitle>Duplicate Routine</DialogTitle>
-            <DialogDescription>
+      {/* Duplicate Confirmation Drawer */}
+      <Drawer open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <DrawerContent className="max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader>
+            <DrawerTitle>Duplicate Routine</DrawerTitle>
+            <DrawerDescription>
               Create a copy of this routine with a new name.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-4 px-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="duplicate-name">Routine Name</Label>
               <Input
@@ -155,24 +155,26 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDuplicateDialogOpen(false)}
-            >
-              Cancel
-            </Button>
+          <DrawerFooter>
             <Button
               type="button"
               onClick={handleDuplicateConfirm}
               disabled={!duplicateName.trim()}
+              className="min-h-11"
             >
               Duplicate
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDuplicateDialogOpen(false)}
+              className="min-h-11"
+            >
+              Cancel
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

@@ -6,13 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from '@/components/ui/drawer';
 import {
   Form,
   FormControl,
@@ -219,18 +219,18 @@ export function RoutineDrawer({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col px-2! sm:px-6!">
-          <DialogHeader>
-            <DialogTitle>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh] flex flex-col px-2! sm:px-6!">
+          <DrawerHeader>
+            <DrawerTitle>
               {isEditing ? 'Edit Routine' : 'Create New Routine'}
-            </DialogTitle>
-            <DialogDescription>
+            </DrawerTitle>
+            <DrawerDescription>
               {isEditing
                 ? 'Update the routine details and exercises below.'
                 : 'Add a new workout routine to your library.'}
-            </DialogDescription>
-          </DialogHeader>
+            </DrawerDescription>
+          </DrawerHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
@@ -295,7 +295,7 @@ export function RoutineDrawer({
             </form>
           </Form>
 
-          <DialogFooter className="border-t gap-2 flex-row">
+          <DrawerFooter className="border-t gap-2 flex-row">
             {isEditing && onDelete && (
               <Button
                 type="button"
@@ -319,9 +319,9 @@ export function RoutineDrawer({
                   ? 'Update Routine'
                   : 'Create Routine'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* Add Exercise Drawer */}
       <AddExerciseDrawer
@@ -329,6 +329,7 @@ export function RoutineDrawer({
         onOpenChange={setIsAddExerciseOpen}
         onAddExercise={handleAddExercise}
         excludeMovementIds={exercises.map((ex) => ex.movementId)}
+        nested
       />
     </>
   );

@@ -3,24 +3,24 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { AlternativeMovementItem } from './AlternativeMovementItem';
 import { AddAlternativeDrawer } from './AddAlternativeDrawer';
 import { Trash2, Plus } from 'lucide-react';
-import type { ExerciseFormData, AlternativeMovementFormData } from './RoutineDialog';
+import type { ExerciseFormData, AlternativeMovementFormData } from './RoutineDrawer';
 
-interface ExerciseEditDialogProps {
+interface ExerciseEditDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercise: ExerciseFormData | null;
@@ -28,13 +28,13 @@ interface ExerciseEditDialogProps {
   onDelete: () => void;
 }
 
-export function ExerciseEditDialog({
+export function ExerciseEditDrawer({
   open,
   onOpenChange,
   exercise,
   onSave,
   onDelete,
-}: ExerciseEditDialogProps) {
+}: ExerciseEditDrawerProps) {
   const [sets, setSets] = useState(exercise?.targetSets || 3);
   const [reps, setReps] = useState(exercise?.targetReps || 10);
   const [weight, setWeight] = useState(exercise?.targetWeight || 0);
@@ -100,16 +100,16 @@ export function ExerciseEditDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
+      <Drawer open={open} onOpenChange={onOpenChange} nested>
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader>
+            <DrawerTitle>
               Edit Exercise
-            </DialogTitle>
-          </DialogHeader>
+            </DrawerTitle>
+          </DrawerHeader>
 
           <ScrollArea className="flex-1 overflow-auto">
-            <div className="space-y-4 px-1">
+            <div className="space-y-4 px-4">
               {/* Exercise Name */}
               <div>
                 <p className="font-medium">{movement?.name || 'Loading...'}</p>
@@ -204,7 +204,7 @@ export function ExerciseEditDialog({
             </div>
           </ScrollArea>
 
-          <DialogFooter className="border-t flex-row gap-2">
+          <DrawerFooter className="border-t flex-row gap-2">
             <Button
               type="button"
               variant="destructive"
@@ -230,12 +230,12 @@ export function ExerciseEditDialog({
                 Save
               </Button>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
+      {/* Delete Confirmation Drawer */}
+      <ConfirmDrawer
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
@@ -243,6 +243,7 @@ export function ExerciseEditDialog({
         description="Are you sure you want to remove this exercise from the routine? This action cannot be undone."
         confirmText="Delete"
         variant="destructive"
+        nested
       />
 
       {/* Add Alternative Drawer */}
@@ -251,6 +252,7 @@ export function ExerciseEditDialog({
         onOpenChange={setIsAddAlternativeOpen}
         onAddAlternative={handleAddAlternative}
         excludeMovementIds={excludeMovementIds}
+        nested
       />
     </>
   );

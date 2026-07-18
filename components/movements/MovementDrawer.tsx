@@ -49,7 +49,7 @@ const movementSchema = z.object({
 
 type MovementFormData = z.infer<typeof movementSchema>;
 
-interface MovementDialogProps {
+interface MovementDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingId: string | null;
@@ -60,16 +60,19 @@ interface MovementDialogProps {
     note?: string;
     image?: string;
   };
+  /** Render as a nested drawer (when opened from inside another drawer). */
+  nested?: boolean;
 }
 
-export function MovementDialog({
+export function MovementDrawer({
   open,
   onOpenChange,
   editingId,
   onSuccess,
   onDelete,
   initialData,
-}: MovementDialogProps) {
+  nested = false,
+}: MovementDrawerProps) {
   const utils = trpc.useUtils();
   const isEditing = !!editingId;
 
@@ -148,7 +151,7 @@ export function MovementDialog({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} nested={nested}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>

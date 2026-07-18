@@ -3,9 +3,9 @@
 import { useState, Suspense } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import { MovementsList } from '@/components/movements/MovementsList';
-import { MovementDialog } from '@/components/movements/MovementDrawer';
+import { MovementDrawer } from '@/components/movements/MovementDrawer';
 import { ShareTargetHandler } from '@/components/movements/ShareTargetHandler';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -100,8 +100,8 @@ export default function MovementsPage() {
         onAddMovement={handleAddMovement}
       />
 
-      {/* Create/Edit Dialog */}
-      <MovementDialog
+      {/* Create/Edit Drawer */}
+      <MovementDrawer
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         editingId={editingId}
@@ -114,8 +114,8 @@ export default function MovementsPage() {
         onDelete={handleDelete}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
+      {/* Delete Confirmation Drawer */}
+      <ConfirmDrawer
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}

@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MAIN_MUSCLE_GROUPS, normalizeMuscleGroup } from '@/lib/constants/muscleGroups';
 import { Dumbbell, Plus } from 'lucide-react';
-import { MovementDialog } from '@/components/movements/MovementDrawer';
+import { MovementDrawer } from '@/components/movements/MovementDrawer';
 
 interface AddMovementDrawerProps {
   open: boolean;
@@ -197,13 +197,14 @@ export function AddMovementDrawer({
         </DrawerFooter>
       </DrawerContent>
 
-      {/* Movement Creation Dialog */}
-      <MovementDialog
+      {/* Movement Creation Drawer */}
+      <MovementDrawer
         open={isMovementDialogOpen}
         onOpenChange={setIsMovementDialogOpen}
         editingId={null}
         onSuccess={handleMovementCreated}
         onDelete={() => {}}
+        nested
       />
     </Drawer>
   );
