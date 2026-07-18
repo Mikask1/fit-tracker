@@ -63,6 +63,7 @@ export interface ISessionLog {
   movementId: any;
   movementName: string;
   sets: ISet[];
+  note?: string;
   isCompleted?: boolean;
   completedAt?: number;
 }
@@ -74,6 +75,7 @@ export interface IWorkoutSession {
   sourceRoutineId?: any;
   status: SessionStatus;
   logs: ISessionLog[];
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -124,9 +126,11 @@ export interface SessionFormData {
   date: Date;
   sourceRoutineId?: string;
   status: 'Planned' | 'Completed';
+  notes?: string;
   logs: Array<{
     movementId: string;
     movementName: string;
+    note?: string;
     sets: Array<{
       weight: number;
       reps: number;

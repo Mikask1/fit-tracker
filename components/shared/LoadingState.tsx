@@ -31,6 +31,35 @@ export function MovementsLoadingSkeleton() {
   );
 }
 
+export function SessionLoggingSkeleton() {
+  return (
+    <div className="space-y-4 pl-8">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="border rounded-lg p-4 space-y-3 bg-card">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-6 w-2/5" />
+          </div>
+          <Skeleton className="h-4 w-1/3" />
+          {/* Sets */}
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, j) => (
+              <div key={j} className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-10" />
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 w-9" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function RoutinesLoadingSkeleton() {
   return (
     <div className="space-y-4">

@@ -11,11 +11,12 @@ import { SessionStatus } from '@/types';
 import { useSessionDraftStore } from '@/store/sessionDraftStore';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { LoadingState } from '@/components/shared/LoadingState';
+import { SessionLoggingSkeleton } from '@/components/shared/LoadingState';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/shared/ErrorState';
 import { ExerciseLogCard } from '@/components/calendar/ExerciseLogCard';
 import { AddMovementDrawer } from '@/components/calendar/AddMovementDrawer';
-import { ArrowLeft, Plus, GripVertical, AlarmClock, Ellipsis, EllipsisVertical } from 'lucide-react';
+import { ArrowLeft, Plus, GripVertical, AlarmClock, EllipsisVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -45,6 +46,7 @@ const loggingSchema = z.object({
       reps: z.number().min(0),
       isCompleted: z.boolean().optional(),
     })),
+    note: z.string().optional(),
     isCompleted: z.boolean().optional(),
     completedAt: z.number().optional(),
   })),
@@ -67,10 +69,11 @@ function SortableExerciseLogCard({
   onToggleExerciseCompletion,
   onToggleSetCompletion,
   onRemove,
+  onUpdateNote,
   onSwitchMovement,
   canRemove,
 }: {
-  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number; isCompleted?: boolean }>; isCompleted?: boolean; completedAt?: number };
+  log: { movementId: string; movementName: string; sets: Array<{ weight: number; reps: number; isCompleted?: boolean }>; note?: string; isCompleted?: boolean; completedAt?: number };
   index: number;
   exerciseDetails?: {
     targetSets: number;
@@ -84,6 +87,7 @@ function SortableExerciseLogCard({
   onToggleExerciseCompletion: (index: number, isCompleted: boolean) => void;
   onToggleSetCompletion?: (index: number, setIndex: number, isCompleted: boolean) => void;
   onRemove?: (index: number) => void;
+  onUpdateNote?: (index: number, note: string) => void;
   onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
 }) {
@@ -124,6 +128,7 @@ function SortableExerciseLogCard({
         onToggleExerciseCompletion={onToggleExerciseCompletion}
         onToggleSetCompletion={onToggleSetCompletion}
         onRemove={onRemove}
+        onUpdateNote={onUpdateNote}
         onSwitchMovement={onSwitchMovement}
         canRemove={canRemove}
       />
@@ -137,6 +142,9 @@ export default function SessionLoggingPage({ params }: PageProps) {
   const utils = trpc.useUtils();
   const { getDraft, saveDraft, clearDraft } = useSessionDraftStore();
   const [addMovementDrawerOpen, setAddMovementDrawerOpen] = useState(false);
+  // Tracks whether the form has finished its initial population (incl. async
+  // routine prefill) so we can show a skeleton instead of flashing the empty state.
+  const [initialized, setInitialized] = useState(false);
 
   // Drag-and-drop sensors
   const sensors = useSensors(
@@ -232,6 +240,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
     if (draftIsNewer) {
       // Draft is more recent than server data - restore it
       form.reset({ logs: draft.logs });
+      setInitialized(true);
     } else {
       // Clear stale draft if exists
       if (draft) {
@@ -247,8 +256,10 @@ export default function SessionLoggingPage({ params }: PageProps) {
               : log.movementId?.toString() ?? '',
             movementName: log.movementName,
             sets: log.sets,
+            note: log.note ?? undefined,
           })),
         });
+        setInitialized(true);
       } else if (routine) {
         // Initialize new session from routine - fetch last completed data for each movement
         const initializeWithLastCompleted = async () => {
@@ -283,12 +294,17 @@ export default function SessionLoggingPage({ params }: PageProps) {
 
           console.log('Final logs with prefill:', logsWithPrefill);
           form.reset({ logs: logsWithPrefill });
+          setInitialized(true);
         };
 
         initializeWithLastCompleted();
+      } else if (session.sourceRoutineId) {
+        // Routine-based session whose routine details are still loading -
+        // keep the skeleton up rather than flashing the empty state.
       } else {
         // Custom routine - initialize with empty logs
         form.reset({ logs: [] });
+        setInitialized(true);
       }
     }
   }, [routine, session, form, utils, getDraft, clearDraft, resolvedParams.id]);
@@ -409,6 +425,16 @@ export default function SessionLoggingPage({ params }: PageProps) {
     form.setValue('logs', updatedLogs);
   };
 
+  const updateNote = (logIndex: number, note: string) => {
+    const currentLogs = form.getValues('logs');
+    const updatedLogs = [...currentLogs];
+    updatedLogs[logIndex] = {
+      ...updatedLogs[logIndex],
+      note: note || undefined,
+    };
+    form.setValue('logs', updatedLogs);
+  };
+
   const toggleExerciseCompletion = (logIndex: number, isCompleted: boolean) => {
     const currentLogs = form.getValues('logs');
     const updatedLogs = [...currentLogs];
@@ -505,21 +531,47 @@ export default function SessionLoggingPage({ params }: PageProps) {
     }
   };
 
-  if (sessionLoading) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <LoadingState />
-      </div>
-    );
-  }
-
-  if (sessionError || !session) {
+  if (sessionError || (!sessionLoading && !session)) {
     return (
       <div className="container mx-auto px-4 py-6">
         <ErrorState message="Session not found" />
       </div>
     );
   }
+
+  // While the session is loading (or the form is still being populated from the
+  // routine), show a skeleton pulse instead of flashing the empty state.
+  if (sessionLoading || !initialized) {
+    return (
+      <div className="flex flex-col h-screen">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => router.push('/calendar')} className="h-9 w-9">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex-1">
+                <h1 className="text-xl font-bold">Log Workout</h1>
+                {session ? (
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(session.date), 'EEEE, MMMM d, yyyy')}
+                  </p>
+                ) : (
+                  <Skeleton className="h-4 w-40 mt-1" />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-6">
+          <SessionLoggingSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  // At this point loading has finished and the session exists.
+  if (!session) return null;
 
   // Map exercises for display
   const exerciseLogs = logs.map((log, index) => {
@@ -633,6 +685,7 @@ export default function SessionLoggingPage({ params }: PageProps) {
                         onToggleExerciseCompletion={toggleExerciseCompletion}
                         onToggleSetCompletion={toggleSetCompletion}
                         onRemove={removeMovement}
+                        onUpdateNote={updateNote}
                         onSwitchMovement={handleSwitchMovement}
                         canRemove={logs.length > 1}
                       />

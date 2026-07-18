@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Minus, Trash2, ArrowLeftRight } from 'lucide-react';
+import { Plus, Minus, ArrowLeftRight, EllipsisVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { MenuDrawer } from '@/components/shared/MenuDrawer';
+import { NoteDrawer } from '@/components/shared/NoteDrawer';
+import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { SwitchMovementDialog } from './SwitchMovementDialog';
 
 interface ExerciseLogCardProps {
@@ -18,6 +20,7 @@ interface ExerciseLogCardProps {
     movementId: string;
     movementName: string;
     sets: Array<{ weight: number; reps: number; isCompleted?: boolean }>;
+    note?: string;
     isCompleted?: boolean;
     completedAt?: number;
   };
@@ -34,6 +37,7 @@ interface ExerciseLogCardProps {
   onToggleExerciseCompletion: (index: number, isCompleted: boolean) => void;
   onToggleSetCompletion?: (index: number, setIndex: number, isCompleted: boolean) => void;
   onRemove?: (index: number) => void;
+  onUpdateNote?: (index: number, note: string) => void;
   onSwitchMovement?: (index: number, newMovementId: string, newMovementName: string) => void;
   canRemove?: boolean;
 }
@@ -48,9 +52,12 @@ export function ExerciseLogCard({
   onToggleExerciseCompletion,
   onToggleSetCompletion,
   onRemove,
+  onUpdateNote,
   onSwitchMovement,
   canRemove = true,
 }: ExerciseLogCardProps) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [showNoteDrawer, setShowNoteDrawer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSwitchDialog, setShowSwitchDialog] = useState(false);
 
@@ -65,6 +72,15 @@ export function ExerciseLogCard({
       onRemove(index);
     }
   };
+
+  const handleSaveNote = (note: string) => {
+    if (onUpdateNote) {
+      onUpdateNote(index, note);
+    }
+  };
+
+  // The ⋮ menu offers "Delete" only when the movement can actually be removed.
+  const showMenuButton = !!onUpdateNote || (canRemove && !!onRemove);
 
   const handleSwitch = (newMovementId: string, newMovementName: string) => {
     if (onSwitchMovement) {
@@ -155,16 +171,16 @@ export function ExerciseLogCard({
                 <ArrowLeftRight className="h-4 w-4" />
               </Button>
             )}
-            {canRemove && onRemove && (
+            {showMenuButton && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="h-9 w-9 p-0 text-destructive hover:text-destructive"
-                title='Delete Movement'
+                onClick={() => setShowMenu(true)}
+                className="h-9 w-9 p-0"
+                title="Options"
               >
-                <Trash2 className="h-4 w-4" />
+                <EllipsisVertical className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -265,9 +281,35 @@ export function ExerciseLogCard({
             </Button>
           </div>
         </div>
+
+        {/* Movement note */}
+        {log.note && (
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+            {log.note}
+          </p>
+        )}
       </div>
 
-      <ConfirmDialog
+      {/* ⋮ Options menu */}
+      <MenuDrawer
+        open={showMenu}
+        onOpenChange={setShowMenu}
+        title={log.movementName}
+        hasNote={!!log.note}
+        onAddNote={onUpdateNote ? () => setShowNoteDrawer(true) : undefined}
+        onDelete={canRemove && onRemove ? () => setShowDeleteConfirm(true) : undefined}
+      />
+
+      {/* Note editor */}
+      <NoteDrawer
+        open={showNoteDrawer}
+        onOpenChange={setShowNoteDrawer}
+        title={`Note · ${log.movementName}`}
+        initialValue={log.note ?? ''}
+        onSave={handleSaveNote}
+      />
+
+      <ConfirmDrawer
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         onConfirm={handleDelete}
