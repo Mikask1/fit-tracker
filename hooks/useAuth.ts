@@ -15,12 +15,18 @@ export function useAuth() {
     refetchOnWindowFocus: false,
   });
 
-  // Sync server auth status with client store
+  // Sync server auth status with client store.
+  // Only clear auth when the server explicitly rejects the session — a network
+  // failure (offline / flaky connection) must not log the user out, otherwise
+  // the app is unusable exactly when the offline cache should carry it.
   useEffect(() => {
     if (user) {
       setAuth(user.userId, user.username);
     } else if (error) {
-      clearAuth();
+      const code = error.data?.code;
+      if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN') {
+        clearAuth();
+      }
     }
   }, [user, error, setAuth, clearAuth]);
 

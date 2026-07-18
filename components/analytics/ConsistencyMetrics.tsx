@@ -48,7 +48,8 @@ export function ConsistencyMetrics({
     );
   }
 
-  if (error) {
+  // Keep showing cached data when a background refetch fails (e.g. offline).
+  if (error && !data) {
     return <ErrorState message={error.message} />;
   }
 

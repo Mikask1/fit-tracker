@@ -95,7 +95,9 @@ export default function CalendarPage() {
   }
 
   // Error state
-  if (sessionsError) {
+  // Only surface the error when there is no cached data to show — a failed
+  // background refetch while offline must not hide the persisted calendar.
+  if (sessionsError && !sessions) {
     return (
       <div className="container mx-auto px-4 py-6">
         <ErrorState message={sessionsError.message} />

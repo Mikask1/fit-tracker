@@ -10,8 +10,11 @@ import { ProgressiveOverloadChart } from './ProgressiveOverloadChart';
 import { DrillDownBreadcrumb } from './DrillDownBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
 import { startOfWeek, endOfWeek } from 'date-fns';
+import { useConnectionStore } from '@/store/connectionStore';
+import { CloudOff } from 'lucide-react';
 
 export function AnalyticsSection() {
+  const isHealthy = useConnectionStore((s) => s.isHealthy);
   const [dateRange, setDateRange] = useState<DateRange>({
     option: 'current-week',
     from: startOfWeek(new Date()),
@@ -50,6 +53,14 @@ export function AnalyticsSection() {
           onRangeChange={handleRangeChange}
         />
       </div>
+
+      {/* Analytics are server-computed; offline we show the last-synced data */}
+      {!isHealthy && (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CloudOff className="h-4 w-4" />
+          Offline — showing last-synced analytics. Workouts logged offline appear after syncing.
+        </p>
+      )}
 
       {/* Consistency Metrics */}
       <div>

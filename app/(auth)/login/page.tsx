@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/lib/trpc/client';
 import { useAuth } from '@/hooks/useAuth';
+import { resumeSyncAfterLogin } from '@/lib/offline/flush';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,6 +45,8 @@ export default function LoginPage() {
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: () => {
+      // Offline changes buffered before a session expiry sync now.
+      resumeSyncAfterLogin();
       router.push('/');
       router.refresh();
     },
