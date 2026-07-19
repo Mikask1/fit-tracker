@@ -214,6 +214,10 @@ export default function SessionLoggingPage({ params }: PageProps) {
     onSuccess: async () => {
       // Invalidate marks the query as stale
       await utils.sessions.listByDateRange.invalidate();
+      // Refresh this session's detail cache too — SessionDrawer decides its
+      // view/log mode from sessions.getById, which otherwise keeps serving
+      // the stale "Planned" copy for up to staleTime after completion.
+      await utils.sessions.getById.invalidate({ id: resolvedParams.id });
       // Explicitly refetch to ensure fresh data before navigation
       await utils.sessions.listByDateRange.refetch();
       toast.success('Workout logged successfully!');
