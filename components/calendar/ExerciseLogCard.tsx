@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Minus, ArrowLeftRight, EllipsisVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MenuDrawer } from '@/components/shared/MenuDrawer';
-import { NoteDrawer } from '@/components/shared/NoteDrawer';
+import { NoteEditor } from '@/components/shared/NoteEditor';
 import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { SwitchMovementDrawer } from './SwitchMovementDrawer';
 
@@ -301,7 +301,7 @@ export function ExerciseLogCard({
       />
 
       {/* Note editor */}
-      <NoteDrawer
+      <NoteEditor
         open={showNoteDrawer}
         onOpenChange={setShowNoteDrawer}
         title={`Note · ${log.movementName}`}

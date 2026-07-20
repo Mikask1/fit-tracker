@@ -3,16 +3,13 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerFooter,
-} from '@/components/ui/drawer';
+  FullScreenEditor,
+  FullScreenEditorHeader,
+  FullScreenEditorBody,
+} from '@/components/ui/full-screen-editor';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { AlternativeMovementItem } from './AlternativeMovementItem';
@@ -100,16 +97,19 @@ export function ExerciseEditDrawer({
 
   return (
     <>
-      <Drawer open={open} onOpenChange={onOpenChange} nested>
-        <DrawerContent className="max-h-[90vh] flex flex-col">
-          <DrawerHeader>
-            <DrawerTitle>
-              Edit Exercise
-            </DrawerTitle>
-          </DrawerHeader>
+      <FullScreenEditor open={open} onOpenChange={onOpenChange}>
+        <FullScreenEditorHeader
+          title="Edit Exercise"
+          onCancel={() => onOpenChange(false)}
+          action={
+            <Button type="button" onClick={handleSave} className="min-h-11">
+              Save
+            </Button>
+          }
+        />
 
-          <ScrollArea className="flex-1 overflow-auto">
-            <div className="space-y-4 px-4">
+        <FullScreenEditorBody className="py-4">
+            <div className="space-y-4">
               {/* Exercise Name */}
               <div>
                 <p className="font-medium">{movement?.name || 'Loading...'}</p>
@@ -201,38 +201,19 @@ export function ExerciseEditDrawer({
                   </div>
                 )}
               </div>
-            </div>
-          </ScrollArea>
 
-          <DrawerFooter className="border-t flex-row gap-2">
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              className="min-h-11"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <div className="flex-1 flex gap-2">
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="min-h-11 flex-1"
+                variant="destructive"
+                onClick={handleDelete}
+                className="mt-2 min-h-11 w-full"
               >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSave}
-                className="min-h-11 flex-1"
-              >
-                Save
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Exercise
               </Button>
             </div>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+        </FullScreenEditorBody>
+      </FullScreenEditor>
 
       {/* Delete Confirmation Drawer */}
       <ConfirmDrawer
@@ -243,7 +224,6 @@ export function ExerciseEditDrawer({
         description="Are you sure you want to remove this exercise from the routine? This action cannot be undone."
         confirmText="Delete"
         variant="destructive"
-        nested
       />
 
       {/* Add Alternative Drawer */}
@@ -252,7 +232,6 @@ export function ExerciseEditDrawer({
         onOpenChange={setIsAddAlternativeOpen}
         onAddAlternative={handleAddAlternative}
         excludeMovementIds={excludeMovementIds}
-        nested
       />
     </>
   );

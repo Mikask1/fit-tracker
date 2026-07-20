@@ -131,6 +131,10 @@
   padding-bottom: 4rem;
 }
 
+.pt-safe {
+  padding-top: 0.5rem;
+}
+
 /* Enhanced padding for browsers with safe area support */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {
@@ -139,5 +143,11 @@
 
   .pb-nav-safe {
     padding-bottom: calc(4rem + env(safe-area-inset-bottom) + 0.5rem);
+  }
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  .pt-safe {
+    padding-top: calc(env(safe-area-inset-top) + 0.5rem);
   }
 }

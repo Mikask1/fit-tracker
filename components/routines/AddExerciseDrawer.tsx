@@ -3,13 +3,10 @@
 import { useState, useMemo } from 'react';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from '@/components/ui/drawer';
+  FullScreenEditor,
+  FullScreenEditorHeader,
+  FullScreenEditorBody,
+} from '@/components/ui/full-screen-editor';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +18,6 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MAIN_MUSCLE_GROUPS } from '@/lib/constants/muscleGroups';
@@ -33,8 +29,6 @@ interface AddExerciseDrawerProps {
   onOpenChange: (open: boolean) => void;
   onAddExercise: (exercise: ExerciseFormData) => void;
   excludeMovementIds: string[];
-  /** Render as a nested drawer (when opened from inside another drawer). */
-  nested?: boolean;
 }
 
 export function AddExerciseDrawer({
@@ -42,7 +36,6 @@ export function AddExerciseDrawer({
   onOpenChange,
   onAddExercise,
   excludeMovementIds,
-  nested = false,
 }: AddExerciseDrawerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [muscleFilter, setMuscleFilter] = useState<string>('all');
@@ -95,104 +88,88 @@ export function AddExerciseDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} nested={nested}>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader>
-          <DrawerTitle>Add Movement</DrawerTitle>
-          <DrawerDescription>
-            Select a movement from your library to add to this routine
-          </DrawerDescription>
-        </DrawerHeader>
+    <FullScreenEditor open={open} onOpenChange={onOpenChange} hasDescription>
+      <FullScreenEditorHeader
+        title="Add Movement"
+        description="Select a movement from your library to add to this routine"
+        onCancel={() => onOpenChange(false)}
+      />
 
-        <div className="px-4 space-y-4">
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Input
-              placeholder="Search movements..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-11 flex-1"
-            />
-            <Select value={muscleFilter} onValueChange={setMuscleFilter}>
-              <SelectTrigger className="h-11 sm:w-48">
-                <SelectValue placeholder="Filter by muscle group" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Muscle Groups</SelectItem>
-                {MAIN_MUSCLE_GROUPS.map((group) => (
-                  <SelectItem key={group} value={group}>
-                    {group}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Filters - fixed under the header */}
+      <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row">
+        <Input
+          placeholder="Search movements..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-11 flex-1"
+        />
+        <Select value={muscleFilter} onValueChange={setMuscleFilter}>
+          <SelectTrigger className="h-11 sm:w-48">
+            <SelectValue placeholder="Filter by muscle group" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Muscle Groups</SelectItem>
+            {MAIN_MUSCLE_GROUPS.map((group) => (
+              <SelectItem key={group} value={group}>
+                {group}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Movement List */}
+      <FullScreenEditorBody className="py-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
           </div>
-
-          {/* Movement List */}
-          <ScrollArea className="h-[50vh]">
-            {isLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-20 w-full" />
-                ))}
-              </div>
-            ) : availableMovements.length === 0 ? (
-              <EmptyState
-                title={
-                  excludeMovementIds.length > 0
-                    ? 'No more movements available'
-                    : 'No movements found'
-                }
-                description={
-                  excludeMovementIds.length > 0
-                    ? 'All movements have been added to this routine'
-                    : 'Try adjusting your search or filter criteria'
-                }
-                icon={<Dumbbell className="h-12 w-12" />}
-              />
-            ) : (
-              <div className="space-y-2 pb-4">
-                {availableMovements.map((movement) => (
-                  <Card
-                    key={movement._id.toString()}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => handleSelectMovement(movement._id.toString())}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{movement.name}</h4>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Default: 3 sets × 12 reps • {calculateDefaultDuration()}
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {movement.muscleGroups.map((mg, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
-                                {mg.sub || mg.main}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
+        ) : availableMovements.length === 0 ? (
+          <EmptyState
+            title={
+              excludeMovementIds.length > 0
+                ? 'No more movements available'
+                : 'No movements found'
+            }
+            description={
+              excludeMovementIds.length > 0
+                ? 'All movements have been added to this routine'
+                : 'Try adjusting your search or filter criteria'
+            }
+            icon={<Dumbbell className="h-12 w-12" />}
+          />
+        ) : (
+          <div className="space-y-2">
+            {availableMovements.map((movement) => (
+              <Card
+                key={movement._id.toString()}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleSelectMovement(movement._id.toString())}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{movement.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Default: 3 sets × 12 reps • {calculateDefaultDuration()}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {movement.muscleGroups.map((mg, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {mg.sub || mg.main}
+                          </Badge>
+                        ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </div>
-
-        <DrawerFooter className="border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full min-h-11"
-          >
-            Cancel
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </FullScreenEditorBody>
+    </FullScreenEditor>
   );
 }

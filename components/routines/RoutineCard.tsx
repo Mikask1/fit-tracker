@@ -6,13 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+  FullScreenEditor,
+  FullScreenEditorHeader,
+  FullScreenEditorBody,
+} from '@/components/ui/full-screen-editor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -134,16 +131,33 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
         </CardContent>
       </Card>
 
-      {/* Duplicate Confirmation Drawer */}
-      <Drawer open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
-        <DrawerContent className="max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-          <DrawerHeader>
-            <DrawerTitle>Duplicate Routine</DrawerTitle>
-            <DrawerDescription>
-              Create a copy of this routine with a new name.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="space-y-4 px-4 py-4">
+      {/* Duplicate Routine editor */}
+      <FullScreenEditor
+        open={isDuplicateDialogOpen}
+        onOpenChange={setIsDuplicateDialogOpen}
+        hasDescription
+      >
+        {/* Stop clicks bubbling (through the React portal tree) to the card's onEdit. */}
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FullScreenEditorHeader
+            title="Duplicate Routine"
+            description="Create a copy of this routine with a new name."
+            onCancel={() => setIsDuplicateDialogOpen(false)}
+            action={
+              <Button
+                type="button"
+                onClick={handleDuplicateConfirm}
+                disabled={!duplicateName.trim()}
+                className="min-h-11"
+              >
+                Duplicate
+              </Button>
+            }
+          />
+          <FullScreenEditorBody className="py-4">
             <div className="space-y-2">
               <Label htmlFor="duplicate-name">Routine Name</Label>
               <Input
@@ -154,27 +168,9 @@ export function RoutineCard({ routine, onEdit, onDuplicate }: RoutineCardProps) 
                 className="h-11"
               />
             </div>
-          </div>
-          <DrawerFooter>
-            <Button
-              type="button"
-              onClick={handleDuplicateConfirm}
-              disabled={!duplicateName.trim()}
-              className="min-h-11"
-            >
-              Duplicate
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDuplicateDialogOpen(false)}
-              className="min-h-11"
-            >
-              Cancel
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </FullScreenEditorBody>
+        </div>
+      </FullScreenEditor>
     </>
   );
 }

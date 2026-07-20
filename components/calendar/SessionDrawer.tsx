@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MenuDrawer } from '@/components/shared/MenuDrawer';
-import { NoteDrawer } from '@/components/shared/NoteDrawer';
+import { NoteEditor } from '@/components/shared/NoteEditor';
 import { ConfirmDrawer } from '@/components/shared/ConfirmDrawer';
 import { toast } from 'sonner';
 import { EllipsisVertical } from 'lucide-react';
@@ -412,8 +412,7 @@ export function SessionDrawer({
           onDelete={() => setIsDeleteConfirmOpen(true)}
         />
 
-        <NoteDrawer
-          nested
+        <NoteEditor
           open={isNoteDrawerOpen}
           onOpenChange={setIsNoteDrawerOpen}
           title="Workout note"

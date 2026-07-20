@@ -6,13 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from '@/components/ui/drawer';
+  FullScreenEditor,
+  FullScreenEditorHeader,
+  FullScreenEditorBody,
+} from '@/components/ui/full-screen-editor';
 import {
   Form,
   FormControl,
@@ -23,7 +20,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExerciseList } from './ExerciseList';
 import { AddExerciseDrawer } from './AddExerciseDrawer';
 import { toast } from 'sonner';
@@ -219,109 +215,104 @@ export function RoutineDrawer({
 
   return (
     <>
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh] flex flex-col px-2! sm:px-6!">
-          <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? 'Edit Routine' : 'Create New Routine'}
-            </DrawerTitle>
-            <DrawerDescription>
-              {isEditing
-                ? 'Update the routine details and exercises below.'
-                : 'Add a new workout routine to your library.'}
-            </DrawerDescription>
-          </DrawerHeader>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-              {/* Routine Name - Sticky at top */}
-              <div className="px-1 pt-4 pb-3 border-b">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Routine Name *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g., Full Body A, Push Day"
-                          className="h-11"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Movements Header - Sticky */}
-              <div className="px-1 py-3 border-b flex justify-between items-center bg-background">
-                <div className="flex flex-col">
-                  <FormLabel>Movements</FormLabel>
-                  {exercises.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} • {calculateTotalDuration()}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAddExerciseOpen(true)}
-                  className="h-9"
-                >
-                  Add Movement
-                </Button>
-              </div>
-
-              {/* Exercise List - Scrollable */}
-              <ScrollArea className="flex-1 overflow-auto">
-                <div className="pr-1 py-4">
-                  {exercises.length === 0 ? (
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
-                      <p>No exercises added yet</p>
-                      <p className="text-sm mt-1">Click "Add Movement" to get started</p>
-                    </div>
-                  ) : (
-                    <ExerciseList
-                      exercises={exercises}
-                      onChange={handleUpdateExercises}
-                    />
-                  )}
-                </div>
-              </ScrollArea>
-            </form>
-          </Form>
-
-          <DrawerFooter className="border-t gap-2 flex-row">
-            {isEditing && onDelete && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => onDelete(editingId)}
-                disabled={isLoading}
-                className="w-auto min-h-11"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+      <FullScreenEditor open={open} onOpenChange={onOpenChange} hasDescription>
+        <FullScreenEditorHeader
+          title={isEditing ? 'Edit Routine' : 'Create New Routine'}
+          description={
+            isEditing
+              ? 'Update the routine details and exercises below.'
+              : 'Add a new workout routine to your library.'
+          }
+          onCancel={() => onOpenChange(false)}
+          action={
             <Button
-              type="submit"
+              type="button"
               disabled={isLoading}
               onClick={form.handleSubmit(onSubmit)}
-              className="flex-1 min-h-11"
+              className="min-h-11"
             >
-              {isLoading
-                ? 'Saving...'
-                : isEditing
-                  ? 'Update Routine'
-                  : 'Create Routine'}
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          }
+        />
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-1 flex-col overflow-hidden"
+          >
+            {/* Routine Name - fixed under the header */}
+            <div className="border-b px-4 pt-4 pb-3">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Routine Name *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="e.g., Full Body A, Push Day"
+                        className="h-11"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Movements Header - fixed under the name field */}
+            <div className="bg-background flex items-center justify-between border-b px-4 py-3">
+              <div className="flex flex-col">
+                <FormLabel>Movements</FormLabel>
+                {exercises.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {exercises.length} exercise{exercises.length !== 1 ? 's' : ''} • {calculateTotalDuration()}
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddExerciseOpen(true)}
+                className="h-9"
+              >
+                Add Movement
+              </Button>
+            </div>
+
+            {/* Exercise List - Scrollable */}
+            <FullScreenEditorBody className="py-4">
+              {exercises.length === 0 ? (
+                <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
+                  <p>No exercises added yet</p>
+                  <p className="text-sm mt-1">Click "Add Movement" to get started</p>
+                </div>
+              ) : (
+                <ExerciseList
+                  exercises={exercises}
+                  onChange={handleUpdateExercises}
+                />
+              )}
+
+              {isEditing && onDelete && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => onDelete(editingId)}
+                  disabled={isLoading}
+                  className="mt-6 min-h-11 w-full"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Routine
+                </Button>
+              )}
+            </FullScreenEditorBody>
+          </form>
+        </Form>
+      </FullScreenEditor>
 
       {/* Add Exercise Drawer */}
       <AddExerciseDrawer
@@ -329,7 +320,6 @@ export function RoutineDrawer({
         onOpenChange={setIsAddExerciseOpen}
         onAddExercise={handleAddExercise}
         excludeMovementIds={exercises.map((ex) => ex.movementId)}
-        nested
       />
     </>
   );

@@ -6,13 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+  FullScreenEditor,
+  FullScreenEditorHeader,
+  FullScreenEditorBody,
+} from '@/components/ui/full-screen-editor';
 import { trpc } from '@/lib/trpc/client';
 import { SessionStatus } from '@/types';
 import { startOfWeek, endOfWeek } from 'date-fns';
@@ -124,58 +121,44 @@ export function WeeklyStats() {
         </div>
       </Card>
 
-      {/* Edit Drawer */}
-      <Drawer open={isEditing} onOpenChange={setIsEditing}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader>
-            <DrawerTitle>Update Weekly Goal</DrawerTitle>
-            <DrawerDescription>
-              Set your expected number of workouts per week
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="space-y-4 px-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="expected-workouts">
-                Expected workouts per week
-              </Label>
-              <Input
-                id="expected-workouts"
-                type="number"
-                min={1}
-                max={7}
-                value={editValue}
-                onChange={(e) =>
-                  setEditValue(parseInt(e.target.value) || 1)
-                }
-                className="h-11"
-                disabled={updateMutation.isPending}
-              />
-              <p className="text-xs text-muted-foreground">
-                Choose between 1 and 7 workouts per week
-              </p>
-            </div>
-          </div>
-          <DrawerFooter>
+      {/* Edit weekly goal editor */}
+      <FullScreenEditor open={isEditing} onOpenChange={setIsEditing} hasDescription>
+        <FullScreenEditorHeader
+          title="Update Weekly Goal"
+          description="Set your expected number of workouts per week"
+          onCancel={handleCancel}
+          action={
             <Button
               type="button"
               onClick={handleSave}
               disabled={updateMutation.isPending}
               className="min-h-11"
             >
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {updateMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
+          }
+        />
+        <FullScreenEditorBody className="py-4">
+          <div className="space-y-2">
+            <Label htmlFor="expected-workouts">
+              Expected workouts per week
+            </Label>
+            <Input
+              id="expected-workouts"
+              type="number"
+              min={1}
+              max={7}
+              value={editValue}
+              onChange={(e) => setEditValue(parseInt(e.target.value) || 1)}
+              className="h-11"
               disabled={updateMutation.isPending}
-              className="min-h-11"
-            >
-              Cancel
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+            />
+            <p className="text-xs text-muted-foreground">
+              Choose between 1 and 7 workouts per week
+            </p>
+          </div>
+        </FullScreenEditorBody>
+      </FullScreenEditor>
     </>
   );
 }

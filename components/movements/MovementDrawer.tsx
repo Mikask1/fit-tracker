@@ -6,13 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { trpc } from '@/lib/trpc/client';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-} from '@/components/ui/drawer';
+  FullScreenEditor,
+  FullScreenEditorHeader,
+  FullScreenEditorBody,
+} from '@/components/ui/full-screen-editor';
 import {
   Form,
   FormControl,
@@ -60,8 +57,6 @@ interface MovementDrawerProps {
     note?: string;
     image?: string;
   };
-  /** Render as a nested drawer (when opened from inside another drawer). */
-  nested?: boolean;
 }
 
 export function MovementDrawer({
@@ -71,7 +66,6 @@ export function MovementDrawer({
   onSuccess,
   onDelete,
   initialData,
-  nested = false,
 }: MovementDrawerProps) {
   const utils = trpc.useUtils();
   const isEditing = !!editingId;
@@ -150,22 +144,29 @@ export function MovementDrawer({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  return (
-    <Drawer open={open} onOpenChange={onOpenChange} nested={nested}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader>
-          <DrawerTitle>
-            {isEditing ? 'Edit Movement' : 'Create New Movement'}
-          </DrawerTitle>
-          <DrawerDescription>
-            {isEditing
-              ? 'Update the movement details below.'
-              : 'Add a new exercise movement to your library.'}
-          </DrawerDescription>
-        </DrawerHeader>
+  const description = isEditing
+    ? 'Update the movement details below.'
+    : 'Add a new exercise movement to your library.';
 
-        <div className="overflow-y-auto px-4">
-          <Form {...form}>
+  return (
+    <FullScreenEditor open={open} onOpenChange={onOpenChange} hasDescription>
+      <FullScreenEditorHeader
+        title={isEditing ? 'Edit Movement' : 'Create New Movement'}
+        description={description}
+        onCancel={() => onOpenChange(false)}
+        action={
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={isLoading}
+            className="min-h-11"
+          >
+            {isLoading ? 'Saving...' : 'Save'}
+          </Button>
+        }
+      />
+
+      <FullScreenEditorBody className="py-4">
+        <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Movement Name */}
               <FormField
@@ -247,34 +248,20 @@ export function MovementDrawer({
 
             </form>
           </Form>
-        </div>
 
-        <DrawerFooter className="gap-2">
-          <Button
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading
-              ? 'Saving...'
-              : isEditing
-                ? 'Update Movement'
-                : 'Create Movement'}
-          </Button>
           {isEditing && onDelete && (
             <Button
               type="button"
               variant="destructive"
               onClick={() => onDelete(editingId)}
               disabled={isLoading}
-              className="w-full"
+              className="mt-6 min-h-11 w-full"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Movement
             </Button>
           )}
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+        </FullScreenEditorBody>
+    </FullScreenEditor>
   );
 }
